@@ -2365,11 +2365,27 @@ window.App = (() => {
             ${!editing ? `
             <div class="form-group mb-3">
               <label class="form-label">Contraseña *</label>
-              <input type="password" class="form-input" id="au-pass" placeholder="Mínimo 6 caracteres">
+              <div class="input-pass-wrapper">
+                <input type="password" class="form-input" id="au-pass" placeholder="Mínimo 6 caracteres">
+                <button type="button" class="toggle-pass-btn" id="au-pass-toggle">
+                  <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
+              <div class="pw-strength-wrapper">
+                <div class="pw-strength-bar">
+                  <div class="pw-strength-fill" id="au-pass-strength-fill"></div>
+                </div>
+                <span class="pw-strength-text" id="au-pass-strength-text"></span>
+              </div>
             </div>
             <div class="form-group mb-3">
               <label class="form-label">Confirmar Contraseña *</label>
-              <input type="password" class="form-input" id="au-pass2" placeholder="Repite la contraseña">
+              <div class="input-pass-wrapper">
+                <input type="password" class="form-input" id="au-pass2" placeholder="Repite la contraseña">
+                <button type="button" class="toggle-pass-btn" id="au-pass2-toggle">
+                  <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
             </div>` : ''}
             <div class="form-group mb-3">
               <label class="form-label">Rol *</label>
@@ -2387,6 +2403,19 @@ window.App = (() => {
       `;
       document.body.appendChild(overlay);
       if (window.lucide) window.lucide.createIcons();
+
+      if (!editing) {
+        Utils.initPasswordHelper({
+          inputEl: overlay.querySelector('#au-pass'),
+          toggleBtnEl: overlay.querySelector('#au-pass-toggle'),
+          strengthFillEl: overlay.querySelector('#au-pass-strength-fill'),
+          strengthTextEl: overlay.querySelector('#au-pass-strength-text')
+        });
+        Utils.initPasswordHelper({
+          inputEl: overlay.querySelector('#au-pass2'),
+          toggleBtnEl: overlay.querySelector('#au-pass2-toggle')
+        });
+      }
 
       overlay.querySelector('#au-save-btn').onclick = () => {
         const name = overlay.querySelector('#au-name').value.trim();
@@ -2425,11 +2454,27 @@ window.App = (() => {
           <div class="modal-body">
             <div class="form-group mb-3">
               <label class="form-label">Nueva Contraseña *</label>
-              <input type="password" class="form-input" id="cpw-new" placeholder="Mínimo 6 caracteres">
+              <div class="input-pass-wrapper">
+                <input type="password" class="form-input" id="cpw-new" placeholder="Mínimo 6 caracteres">
+                <button type="button" class="toggle-pass-btn" id="cpw-new-toggle">
+                  <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
+              <div class="pw-strength-wrapper">
+                <div class="pw-strength-bar">
+                  <div class="pw-strength-fill" id="cpw-strength-fill"></div>
+                </div>
+                <span class="pw-strength-text" id="cpw-strength-text"></span>
+              </div>
             </div>
             <div class="form-group mb-3">
               <label class="form-label">Confirmar Nueva Contraseña *</label>
-              <input type="password" class="form-input" id="cpw-new2" placeholder="Repite la contraseña">
+              <div class="input-pass-wrapper">
+                <input type="password" class="form-input" id="cpw-new2" placeholder="Repite la contraseña">
+                <button type="button" class="toggle-pass-btn" id="cpw-new2-toggle">
+                  <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                </button>
+              </div>
             </div>
             <div class="flex justify-end gap-2 mt-4">
               <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
@@ -2440,6 +2485,17 @@ window.App = (() => {
       `;
       document.body.appendChild(overlay);
       if (window.lucide) window.lucide.createIcons();
+
+      Utils.initPasswordHelper({
+        inputEl: overlay.querySelector('#cpw-new'),
+        toggleBtnEl: overlay.querySelector('#cpw-new-toggle'),
+        strengthFillEl: overlay.querySelector('#cpw-strength-fill'),
+        strengthTextEl: overlay.querySelector('#cpw-strength-text')
+      });
+      Utils.initPasswordHelper({
+        inputEl: overlay.querySelector('#cpw-new2'),
+        toggleBtnEl: overlay.querySelector('#cpw-new2-toggle')
+      });
 
       overlay.querySelector('#cpw-save-btn').onclick = () => {
         const newPass = overlay.querySelector('#cpw-new').value;

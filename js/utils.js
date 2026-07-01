@@ -167,9 +167,97 @@ window.Utils = (() => {
     return div.innerHTML;
   }
 
+  // Password Visibility and Strength Checker Helper
+  function initPasswordHelper({ inputEl, toggleBtnEl, strengthFillEl, strengthTextEl }) {
+    if (!inputEl) return;
+
+    // 1. Show/Hide Toggle
+    if (toggleBtnEl) {
+      toggleBtnEl.addEventListener('click', () => {
+        const isPass = inputEl.type === 'password';
+        inputEl.type = isPass ? 'text' : 'password';
+        
+        // Toggle icon
+        const icon = toggleBtnEl.querySelector('i');
+        if (icon) {
+          icon.setAttribute('data-lucide', isPass ? 'eye-off' : 'eye');
+          if (window.lucide) window.lucide.createIcons();
+        }
+      });
+    }
+
+    // 2. Strength Checker
+    if (inputEl && (strengthFillEl || strengthTextEl)) {
+      inputEl.addEventListener('input', () => {
+        const val = inputEl.value;
+        if (!val) {
+          if (strengthFillEl) { strengthFillEl.style.width = '0%'; strengthFillEl.style.backgroundColor = 'transparent'; }
+          if (strengthTextEl) { strengthTextEl.textContent = ''; }
+          return;
+        }
+
+        let score = 0;
+        
+        // Criteria
+        if (val.length >= 6) score += 1;
+        if (val.length >= 8) score += 1;
+        if (/[A-Z]/.test(val)) score += 1;
+        if (/[0-9]/.test(val)) score += 1;
+        if (/[^A-Za-z0-9]/.test(val)) score += 1;
+
+        let label = '';
+        let color = '';
+        let pct = '0%';
+
+        if (val.length < 6) {
+          label = 'Muy Corta (mínimo 6)';
+          color = 'var(--error)';
+          pct = '20%';
+        } else {
+          switch (score) {
+            case 1:
+              label = 'Débil';
+              color = 'var(--error)';
+              pct = '40%';
+              break;
+            case 2:
+              label = 'Regular';
+              color = 'var(--warning)';
+              pct = '60%';
+              break;
+            case 3:
+              label = 'Segura';
+              color = 'var(--accent-primary)';
+              pct = '80%';
+              break;
+            case 4:
+            case 5:
+              label = 'Muy Segura';
+              color = 'var(--success)';
+              pct = '100%';
+              break;
+            default:
+              label = 'Débil';
+              color = 'var(--error)';
+              pct = '30%';
+          }
+        }
+
+        if (strengthFillEl) {
+          strengthFillEl.style.width = pct;
+          strengthFillEl.style.backgroundColor = color;
+        }
+        if (strengthTextEl) {
+          strengthTextEl.textContent = `Fortaleza: ${label}`;
+          strengthTextEl.style.color = color;
+        }
+      });
+    }
+  }
+
   return {
     uuid, formatCurrency, formatDate, formatDateShort, today,
     numberToWords, CLIENT_TYPES, OFFER_TYPES,
-    showToast, confirm, escHtml
+    showToast, confirm, escHtml, initPasswordHelper
   };
 })();

@@ -272,10 +272,13 @@ window.Auth = (() => {
 
               <div class="form-group">
                 <label class="form-label">Contraseña</label>
-                <div class="login-input-wrapper">
+                <div class="login-input-wrapper input-pass-wrapper">
                   <span class="login-input-icon"><i data-lucide="lock" style="width:16px;height:16px;"></i></span>
                   <input type="password" class="form-input login-input" id="login-pass" 
                     placeholder="Ingresa tu contraseña" autocomplete="current-password">
+                  <button type="button" class="toggle-pass-btn" id="login-toggle-pass" style="right:16px">
+                    <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                  </button>
                 </div>
               </div>
 
@@ -306,6 +309,11 @@ window.Auth = (() => {
 
     // Add login-specific styles
     addLoginStyles();
+
+    Utils.initPasswordHelper({
+      inputEl: document.getElementById('login-pass'),
+      toggleBtnEl: document.getElementById('login-toggle-pass')
+    });
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -575,7 +583,6 @@ window.Auth = (() => {
       }
 
       .login-error {
-        background: var(--error-bg);
         border: 1px solid rgba(230, 57, 70, 0.3);
         color: var(--error);
         padding: 10px 14px;

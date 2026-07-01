@@ -1258,3 +1258,60 @@ tbody tr:last-child td {
   color: inherit;
 }
 
+/* ── Password Eye Toggle & Strength Indicator ── */
+.input-pass-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-pass-wrapper .form-input {
+  padding-right: 44px !important;
+}
+
+.toggle-pass-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  transition: color var(--transition-fast);
+}
+
+.toggle-pass-btn:hover {
+  color: var(--accent-primary);
+}
+
+.pw-strength-wrapper {
+  margin-top: 8px;
+}
+
+.pw-strength-bar {
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 6px;
+  border: 1px solid var(--border-default);
+}
+
+.pw-strength-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.pw-strength-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: block;
+}
+
+
