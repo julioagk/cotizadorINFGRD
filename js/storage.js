@@ -13,6 +13,10 @@ window.Storage = (() => {
   function getApiUrl() {
     const url = localStorage.getItem('ig_api_url');
     if (url) return url;
+    // Default to Railway URL in production hostnames
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return 'https://cotizadorinf-production.up.railway.app';
+    }
     // Default to relative if running on local server port
     if (window.location.port === '8080') {
       return window.location.origin;
