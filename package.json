@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "echo 'Frontend build skipped'"
+    "build": "mkdir -p public && cp -r css js index.html public && (cp -r assets public || true)"
   },
   "dependencies": {
     "cors": "^2.8.5",
