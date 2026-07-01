@@ -162,6 +162,7 @@ window.App = (() => {
       case 'quotations': renderQuotationsList(); break;
       case 'quotation-detail': renderQuotationDetail(params[0]); break;
       case 'clients': renderClientsList(); break;
+      case 'client-new': renderNewClientStandalone(main); break;
       case 'client-detail': renderClientDetail(params[0]); break;
       case 'calculator': Calculator.renderPage(); break;
       case 'settings': renderSettings(); break;
@@ -1810,13 +1811,7 @@ window.App = (() => {
 
   // ── Public Methods ──
   function showNewClientModal() {
-    location.hash = 'quotation-new';
-    // A small delay then trigger the new client flow
-    setTimeout(() => {
-      // Actually navigate to clients, show a form
-      const main = document.getElementById('main-content');
-      renderNewClientStandalone(main);
-    }, 50);
+    location.hash = 'client-new';
   }
 
   function renderNewClientStandalone(main) {

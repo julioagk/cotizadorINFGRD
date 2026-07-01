@@ -368,10 +368,6 @@ window.Auth = (() => {
 
   function seedInitialData() {
     if (!window.SEED_DATA) return;
-    if (Storage.getApiUrl()) {
-      console.log('Backend database is configured. Skipping client-side seeding.');
-      return;
-    }
 
     const clients = Storage.clients.getAll();
     const hasClient = (companyName) => clients.some(c => c.company.toUpperCase() === companyName.toUpperCase());
