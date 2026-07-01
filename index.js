@@ -54,10 +54,12 @@ function decrypt(text) {
 function encryptClient(c) {
   if (!c) return c;
   return {
-    ...c,
+    id: c.id,
     company: encrypt(c.company),
     name: encrypt(c.name),
     phone: encrypt(c.phone),
+    factor: parseFloat(c.factor) || 1.0,
+    type: c.type || c.clientType || '',
     email: encrypt(c.email),
     address: encrypt(c.address),
     notes: encrypt(c.notes)
@@ -67,10 +69,13 @@ function encryptClient(c) {
 function decryptClient(c) {
   if (!c) return c;
   return {
-    ...c,
+    id: c.id,
     company: decrypt(c.company),
     name: decrypt(c.name),
     phone: decrypt(c.phone),
+    factor: parseFloat(c.factor) || 1.0,
+    type: c.type,
+    clientType: c.type,
     email: decrypt(c.email),
     address: decrypt(c.address),
     notes: decrypt(c.notes)
@@ -388,12 +393,18 @@ async function seedDatabaseIfEmpty() {
     console.log(`Seeding price list for ${dc.company}: ${mappedProducts.length} products...`);
 
     if (isProd) {
-      for (const p of mappedProducts) {
-        const ep = encryptPriceListItem(p);
-        await pool.query(
-          'INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo]
-        );
+      if (mappedProducts.length > 0) {
+        const values = [];
+        const placeholders = [];
+        let index = 1;
+        for (const p of mappedProducts) {
+          const ep = encryptPriceListItem(p);
+          placeholders.push(`($${index}, $${index+1}, $${index+2}, $${index+3}, $${index+4}, $${index+5}, $${index+6})`);
+          values.push(clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo);
+          index += 7;
+        }
+        const queryText = `INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ${placeholders.join(', ')}`;
+        await pool.query(queryText, values);
       }
     } else {
       const db = readLocalDb();
@@ -688,12 +699,18 @@ app.post('/api/pricelists/:clientId', async (req, res) => {
   if (isProd) {
     try {
       await pool.query('DELETE FROM price_lists WHERE client_id = $1', [clientId]);
-      for (const p of pList) {
-        const ep = encryptPriceListItem(p);
-        await pool.query(
-          'INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo]
-        );
+      if (Array.isArray(pList) && pList.length > 0) {
+        const values = [];
+        const placeholders = [];
+        let index = 1;
+        for (const p of pList) {
+          const ep = encryptPriceListItem(p);
+          placeholders.push(`($${index}, $${index+1}, $${index+2}, $${index+3}, $${index+4}, $${index+5}, $${index+6})`);
+          values.push(clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo);
+          index += 7;
+        }
+        const queryText = `INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ${placeholders.join(', ')}`;
+        await pool.query(queryText, values);
       }
       res.json({ success: true });
     } catch (err) {
