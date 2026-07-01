@@ -1,0 +1,15 @@
+# Exclude raw Excel files
+*.xlsx
+*.xls
+
+# Exclude generated PDFs and screenshots
+*.pdf
+*.png
+
+# Exclude confidential data files and python parsers
+seed_data.json
+extract_data.py
+parse_all.py
+
+# Exclude real price list database
+js/seed-data.js
