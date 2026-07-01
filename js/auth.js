@@ -111,8 +111,15 @@ window.Auth = (() => {
     if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
       return { success: false, error: 'Ese nombre de usuario ya existe' };
     }
-    users.push({ username: username.toLowerCase(), name, password: hashPassword(password), hashed: true, role });
+    const newUser = { username: username.toLowerCase(), name, password: hashPassword(password), hashed: true, role };
+    users.push(newUser);
     saveUsers(users);
+
+    // Background push to backend
+    Storage.apiCall('/api/auth/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, name, password, role })
+    });
     return { success: true };
   }
 
@@ -122,11 +129,22 @@ window.Auth = (() => {
     if (idx === -1) return;
     users[idx] = { ...users[idx], ...updates };
     saveUsers(users);
+
+    // Background update to backend
+    Storage.apiCall(`/api/auth/users/${username}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
   }
 
   function deleteUser(username) {
     const users = getUsers().filter(u => u.username !== username);
     saveUsers(users);
+
+    // Background delete from backend
+    Storage.apiCall(`/api/auth/users/${username}`, {
+      method: 'DELETE'
+    });
   }
 
   function changePassword(username, newPassword) {
@@ -136,6 +154,12 @@ window.Auth = (() => {
     users[idx].password = hashPassword(newPassword);
     users[idx].hashed = true;
     saveUsers(users);
+
+    // Background password change to backend
+    Storage.apiCall(`/api/auth/users/${username}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password: newPassword })
+    });
   }
 
   function isLoggedIn() {
@@ -154,14 +178,42 @@ window.Auth = (() => {
     }
   }
 
-  function login(username, password) {
+  async function login(username, password) {
+    const apiBase = Storage.getApiUrl();
+    if (apiBase) {
+      // Connect to Railway backend database
+      try {
+        const res = await fetch(`${apiBase}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { success: false, error: err.error || 'Usuario o contraseña incorrectos' };
+        }
+        const user = await res.json();
+        const session = {
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          loginAt: Date.now(),
+          expires: Date.now() + (24 * 60 * 60 * 1000)
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        return { success: true, user: session };
+      } catch (err) {
+        return { success: false, error: 'Error de conexión con el servidor' };
+      }
+    }
+
+    // Local-only backup mode
     const users = getUsers();
     const user = users.find(u => {
       if (u.username.toLowerCase() !== username.toLowerCase()) return false;
       if (u.hashed) {
         return u.password === hashPassword(password);
       }
-      // Plain-text match (legacy) — auto-migrate to hash on success
       if (u.password === password) {
         u.password = hashPassword(password);
         u.hashed = true;
@@ -178,7 +230,7 @@ window.Auth = (() => {
       name: user.name,
       role: user.role,
       loginAt: Date.now(),
-      expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      expires: Date.now() + (24 * 60 * 60 * 1000)
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
@@ -255,7 +307,7 @@ window.Auth = (() => {
     // Add login-specific styles
     addLoginStyles();
 
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('login-user').value.trim();
       const password = document.getElementById('login-pass').value;
@@ -267,13 +319,26 @@ window.Auth = (() => {
         return;
       }
 
-      const result = login(username, password);
+      // Show temporary loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Verificando...';
+      submitBtn.disabled = true;
+
+      const result = await login(username, password);
+      
       if (result.success) {
-        // Seed data on first login
+        // Sync local cache with remote Railway PostgreSQL database on login
+        await Storage.syncWithBackend().catch(err => {
+          console.warn('Backend sync on login skipped or failed:', err);
+        });
+        
         seedInitialData();
-        // Launch app
         App.init();
       } else {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
         errorEl.textContent = result.error;
         errorEl.style.display = 'block';
         document.getElementById('login-pass').value = '';
@@ -598,6 +663,16 @@ window.Auth = (() => {
     if (isLoggedIn()) {
       seedInitialData();
       App.init();
+      
+      // Perform background sync from Railway database
+      Storage.syncWithBackend().then((synced) => {
+        if (synced) {
+          // Re-init App to load updated client/quotation datasets
+          App.init();
+        }
+      }).catch(err => {
+        console.warn('Startup backend sync failed, using cached data:', err);
+      });
     } else {
       renderLoginPage();
     }

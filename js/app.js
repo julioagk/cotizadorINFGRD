@@ -1696,10 +1696,18 @@ window.App = (() => {
               <label class="form-label">Costo por Galón (USD)</label>
               <input type="number" class="form-input" id="cfg-gallon" value="${config.gallonCost}" step="1">
             </div>
-            <div class="form-group">
               <label class="form-label">Tasa de IVA (%)</label>
               <input type="number" class="form-input" id="cfg-iva" value="${config.ivaRate}" step="1">
             </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header"><h2><i data-lucide="database" class="icon-inline" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i> Base de Datos (Railway)</h2></div>
+          <div class="form-group">
+            <label class="form-label">URL del Servidor API de Railway</label>
+            <input type="text" class="form-input" id="cfg-api-url" value="${localStorage.getItem('ig_api_url') || ''}" placeholder="Ej: https://cotizador-production.up.railway.app">
+            <p class="form-hint" style="margin-top: 4px;">Si se deja vacío, la aplicación correrá en modo local independiente (localStorage). Al ingresar una URL, se sincronizarán y guardarán los datos en la base de datos en la nube.</p>
           </div>
         </div>
 
@@ -1759,6 +1767,9 @@ window.App = (() => {
     `;
 
     document.getElementById('cfg-save').addEventListener('click', () => {
+      const apiUrl = document.getElementById('cfg-api-url').value.trim();
+      const currentApiUrl = localStorage.getItem('ig_api_url') || '';
+      
       Storage.config.save({
         gallonCost: parseFloat(document.getElementById('cfg-gallon').value) || 450,
         ivaRate: parseFloat(document.getElementById('cfg-iva').value) || 16,
@@ -1772,7 +1783,28 @@ window.App = (() => {
         signedBy: document.getElementById('cfg-signed').value.trim()
       });
       Storage.folio.set(parseInt(document.getElementById('cfg-folio').value) || 5885);
-      Utils.showToast('Configuración guardada', 'success');
+
+      if (apiUrl !== currentApiUrl) {
+        if (apiUrl) {
+          localStorage.setItem('ig_api_url', apiUrl);
+          Utils.showToast('Conectando y sincronizando con base de datos...', 'info');
+          Storage.syncWithBackend().then((success) => {
+            if (success) {
+              Utils.showToast('¡Base de datos conectada y sincronizada con éxito!', 'success');
+              setTimeout(() => location.reload(), 1500);
+            } else {
+              Utils.showToast('Error: No se pudo establecer conexión con Railway', 'error');
+              localStorage.setItem('ig_api_url', currentApiUrl); // revert
+            }
+          });
+        } else {
+          localStorage.removeItem('ig_api_url');
+          Utils.showToast('Desconectado de base de datos. Modo local activo.', 'info');
+          setTimeout(() => location.reload(), 1500);
+        }
+      } else {
+        Utils.showToast('Configuración guardada', 'success');
+      }
     });
   }
 
