@@ -79,21 +79,33 @@ function decryptClient(c) {
 
 function encryptPriceListItem(p) {
   if (!p) return p;
+  const offers = p.offers || {};
   return {
-    ...p,
-    serpentin: encrypt(p.serpentin),
-    serpentin_gabinete: encrypt(p.serpentin_gabinete),
-    recubrimiento_completo: encrypt(p.recubrimiento_completo)
+    id: p.id,
+    type: p.type,
+    model: p.model,
+    serpentin: encrypt(offers.serpentin),
+    serpentin_gabinete: encrypt(offers.serpentin_gabinete),
+    recubrimiento_completo: encrypt(offers.recubrimiento_completo)
   };
 }
 
 function decryptPriceListItem(p) {
   if (!p) return p;
+  const decSerpentin = decrypt(p.serpentin);
+  const decGabinete = decrypt(p.serpentin_gabinete);
+  const decCompleto = decrypt(p.recubrimiento_completo);
+
+  const offers = {};
+  if (decSerpentin && !isNaN(parseFloat(decSerpentin))) offers.serpentin = parseFloat(decSerpentin);
+  if (decGabinete && !isNaN(parseFloat(decGabinete))) offers.serpentin_gabinete = parseFloat(decGabinete);
+  if (decCompleto && !isNaN(parseFloat(decCompleto))) offers.recubrimiento_completo = parseFloat(decCompleto);
+
   return {
-    ...p,
-    serpentin: parseFloat(decrypt(p.serpentin)) || 0,
-    serpentin_gabinete: parseFloat(decrypt(p.serpentin_gabinete)) || 0,
-    recubrimiento_completo: parseFloat(decrypt(p.recubrimiento_completo)) || 0
+    id: p.id || p.product_id,
+    type: p.type,
+    model: p.model,
+    offers: offers
   };
 }
 
@@ -261,6 +273,11 @@ if (isProd) {
       await pool.query('INSERT INTO users (username, password, name, role, hashed) VALUES ($1, $2, $3, $4, $5)', ['fernando', hash('infiniguard'), 'Fernando Zamarripa', 'admin', true]);
       console.log('Default admin users seeded into PostgreSQL.');
     }
+
+    // Auto-seed database if empty
+    await seedDatabaseIfEmpty().catch(err => {
+      console.error('Error seeding PostgreSQL database:', err);
+    });
   }).catch(err => {
     console.error('Error initializing PostgreSQL tables:', err);
   });
@@ -280,6 +297,112 @@ if (isProd) {
     };
     fs.writeFileSync(localDbPath, JSON.stringify(defaultData, null, 2));
   }
+  
+  // Auto-seed local database if empty
+  seedDatabaseIfEmpty().catch(err => {
+    console.error('Error seeding local database:', err);
+  });
+}
+
+// Seeding logic for initial data (Hisense, Coresa, Proveedora, Bramex)
+async function seedDatabaseIfEmpty() {
+  const seedPath = path.join(__dirname, 'seed_data.json');
+  if (!fs.existsSync(seedPath)) {
+    console.log('No seed_data.json file found, skipping backend seeding.');
+    return;
+  }
+
+  let clientsCount = 0;
+  if (isProd) {
+    const res = await pool.query('SELECT COUNT(*) FROM clients');
+    clientsCount = parseInt(res.rows[0].count);
+  } else {
+    const db = readLocalDb();
+    clientsCount = db.clients.length;
+  }
+
+  if (clientsCount > 0) {
+    console.log('Database already has clients, skipping seeding.');
+    return;
+  }
+
+  console.log('Seeding database with default clients and price lists...');
+  const seedData = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+
+  const defaultClients = [
+    { key: 'hisense', company: 'HISENSE', name: 'Hisense México', type: 'oem', factor: 3.0 },
+    { key: 'coresa', company: 'CORESA', name: 'Coresa', type: 'distribuidor', factor: 4.0 },
+    { key: 'provedora', company: 'PROVEEDORA DE CLIMAS', name: 'Proveedora de Climas', type: 'distribuidor', factor: 4.0 },
+    { key: 'bramex', company: 'BRAMEX', name: 'Bramex', type: 'distribuidor_fabrica', factor: 3.7 }
+  ];
+
+  for (const dc of defaultClients) {
+    const products = seedData[dc.key];
+    if (!products) continue;
+
+    const clientId = crypto.randomUUID();
+    const clientRecord = {
+      id: clientId,
+      company: dc.company,
+      name: dc.name,
+      phone: '',
+      factor: dc.factor,
+      type: dc.type,
+      email: '',
+      address: '',
+      notes: ''
+    };
+
+    console.log(`Seeding client: ${dc.company} (${clientId})...`);
+
+    // 1. Insert Client
+    if (isProd) {
+      const ec = encryptClient(clientRecord);
+      await pool.query(
+        'INSERT INTO clients (id, company, name, phone, factor, type, email, address, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [ec.id, ec.company, ec.name, ec.phone, ec.factor, ec.type, ec.email, ec.address, ec.notes]
+      );
+    } else {
+      const db = readLocalDb();
+      const ec = encryptClient(clientRecord);
+      db.clients.push(ec);
+      writeLocalDb(db);
+    }
+
+    // 2. Insert Price List Products
+    const mappedProducts = products.map(p => {
+      // Auto-cleanup: remove products with no prices
+      const offers = p.offers || {};
+      const keys = Object.keys(offers);
+      const hasValidPrice = keys.some(k => typeof offers[k] === 'number' && offers[k] > 0);
+      if (!hasValidPrice) return null;
+
+      return {
+        id: crypto.randomUUID(),
+        type: p.type,
+        model: p.model,
+        offers: offers
+      };
+    }).filter(Boolean);
+
+    console.log(`Seeding price list for ${dc.company}: ${mappedProducts.length} products...`);
+
+    if (isProd) {
+      for (const p of mappedProducts) {
+        const ep = encryptPriceListItem(p);
+        await pool.query(
+          'INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo]
+        );
+      }
+    } else {
+      const db = readLocalDb();
+      db.priceLists[clientId] = mappedProducts.map(encryptPriceListItem);
+      writeLocalDb(db);
+    }
+  }
+
+  console.log('Database seeding completed.');
 }
 
 // Local File Read/Write Helpers
