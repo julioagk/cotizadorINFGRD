@@ -17,6 +17,162 @@ app.use(express.static(__dirname));
 // Hashing helper
 const hash = (pass) => crypto.createHash('sha256').update(pass).digest('hex');
 
+// Encryption Helpers
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'infiniguard_default_secure_key_32bytes_long!';
+
+const getSecretKey = () => {
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+};
+
+function encrypt(text) {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', getSecretKey(), iv);
+  let encrypted = cipher.update(str, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(text) {
+  if (text === null || text === undefined) return '';
+  if (typeof text !== 'string') return String(text);
+  const parts = text.split(':');
+  if (parts.length !== 2) return text;
+  try {
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = Buffer.from(parts[1], 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', getSecretKey(), iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (err) {
+    return text;
+  }
+}
+
+function encryptClient(c) {
+  if (!c) return c;
+  return {
+    ...c,
+    company: encrypt(c.company),
+    name: encrypt(c.name),
+    phone: encrypt(c.phone),
+    email: encrypt(c.email),
+    address: encrypt(c.address),
+    notes: encrypt(c.notes)
+  };
+}
+
+function decryptClient(c) {
+  if (!c) return c;
+  return {
+    ...c,
+    company: decrypt(c.company),
+    name: decrypt(c.name),
+    phone: decrypt(c.phone),
+    email: decrypt(c.email),
+    address: decrypt(c.address),
+    notes: decrypt(c.notes)
+  };
+}
+
+function encryptPriceListItem(p) {
+  if (!p) return p;
+  return {
+    ...p,
+    serpentin: encrypt(p.serpentin),
+    serpentin_gabinete: encrypt(p.serpentin_gabinete),
+    recubrimiento_completo: encrypt(p.recubrimiento_completo)
+  };
+}
+
+function decryptPriceListItem(p) {
+  if (!p) return p;
+  return {
+    ...p,
+    serpentin: parseFloat(decrypt(p.serpentin)) || 0,
+    serpentin_gabinete: parseFloat(decrypt(p.serpentin_gabinete)) || 0,
+    recubrimiento_completo: parseFloat(decrypt(p.recubrimiento_completo)) || 0
+  };
+}
+
+function encryptQuotation(q) {
+  if (!q) return q;
+  let encryptedItems = q.items;
+  if (q.items) {
+    encryptedItems = { encrypted: encrypt(JSON.stringify(q.items)) };
+  }
+  return {
+    id: q.id,
+    folio: q.folio,
+    date: q.date,
+    clientId: q.clientId || q.client_id,
+    contactName: encrypt(q.contactName || q.contact_name),
+    contactPhone: encrypt(q.contactPhone || q.contact_phone),
+    attentionTo: encrypt(q.attentionTo || q.attention_to),
+    signedBy: q.signedBy || q.signed_by,
+    exchangeRate: q.exchangeRate || q.exchange_rate,
+    applyIva: q.applyIva || q.apply_iva,
+    ivaRate: q.ivaRate || q.iva_rate,
+    iva: q.iva,
+    subtotal: q.subtotal,
+    total: q.total,
+    currency: q.currency,
+    observations: encrypt(q.observations),
+    items: encryptedItems
+  };
+}
+
+function decryptQuotation(q) {
+  if (!q) return q;
+  let decryptedItems = q.items;
+  if (q.items && typeof q.items === 'object' && q.items.encrypted) {
+    try {
+      decryptedItems = JSON.parse(decrypt(q.items.encrypted));
+    } catch (err) {
+      console.error('Error decrypting quotation items:', err);
+    }
+  } else if (q.items && typeof q.items === 'string') {
+    try {
+      const parsed = JSON.parse(q.items);
+      if (parsed && parsed.encrypted) {
+        decryptedItems = JSON.parse(decrypt(parsed.encrypted));
+      } else {
+        decryptedItems = parsed;
+      }
+    } catch {
+      const decryptedStr = decrypt(q.items);
+      try {
+        decryptedItems = JSON.parse(decryptedStr);
+      } catch {
+        decryptedItems = q.items;
+      }
+    }
+  }
+  return {
+    id: q.id,
+    folio: q.folio,
+    date: q.date,
+    clientId: q.clientId || q.client_id,
+    contactName: decrypt(q.contactName || q.contact_name),
+    contactPhone: decrypt(q.contactPhone || q.contact_phone),
+    attentionTo: decrypt(q.attentionTo || q.attention_to),
+    signedBy: q.signedBy || q.signed_by,
+    exchangeRate: parseFloat(q.exchangeRate || q.exchange_rate) || 0,
+    applyIva: q.applyIva || q.apply_iva || false,
+    ivaRate: parseFloat(q.ivaRate || q.iva_rate) || 0,
+    iva: parseFloat(q.iva) || 0,
+    subtotal: parseFloat(q.subtotal) || 0,
+    total: parseFloat(q.total) || 0,
+    currency: q.currency,
+    observations: decrypt(q.observations),
+    items: decryptedItems,
+    createdAt: q.createdAt || q.created_at,
+    updatedAt: q.updatedAt || q.updated_at
+  };
+}
+
 // ── DATABASE SETUP ──
 let pool = null;
 const localDbPath = path.join(__dirname, 'database.json');
@@ -82,13 +238,22 @@ if (isProd) {
       product_id TEXT,
       type TEXT,
       model TEXT,
-      serpentin NUMERIC,
-      serpentin_gabinete NUMERIC,
-      recubrimiento_completo NUMERIC,
+      serpentin TEXT,
+      serpentin_gabinete TEXT,
+      recubrimiento_completo TEXT,
       PRIMARY KEY (client_id, product_id)
     );
   `).then(async () => {
     console.log('Database tables verified/created successfully.');
+    // Run column type conversions in case they are already numeric
+    try {
+      await pool.query('ALTER TABLE price_lists ALTER COLUMN serpentin TYPE TEXT');
+      await pool.query('ALTER TABLE price_lists ALTER COLUMN serpentin_gabinete TYPE TEXT');
+      await pool.query('ALTER TABLE price_lists ALTER COLUMN recubrimiento_completo TYPE TEXT');
+      console.log('PostgreSQL price_lists columns migration completed.');
+    } catch (migErr) {
+      console.log('PostgreSQL price_lists columns migration skipped or already applied.');
+    }
     // Seed default users
     const res = await pool.query('SELECT COUNT(*) FROM users');
     if (parseInt(res.rows[0].count) === 0) {
@@ -291,24 +456,29 @@ app.put('/api/auth/users/:username/password', async (req, res) => {
 app.get('/api/clients', async (req, res) => {
   if (isProd) {
     try {
-      const dbRes = await pool.query('SELECT * FROM clients ORDER BY company ASC');
-      res.json(dbRes.rows);
+      const dbRes = await pool.query('SELECT * FROM clients');
+      const decrypted = dbRes.rows.map(decryptClient);
+      decrypted.sort((a, b) => (a.company || '').localeCompare(b.company || '', 'es', { sensitivity: 'base' }));
+      res.json(decrypted);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   } else {
     const db = readLocalDb();
-    res.json(db.clients);
+    const decrypted = db.clients.map(decryptClient);
+    decrypted.sort((a, b) => (a.company || '').localeCompare(b.company || '', 'es', { sensitivity: 'base' }));
+    res.json(decrypted);
   }
 });
 
 app.post('/api/clients', async (req, res) => {
   const c = req.body;
+  const ec = encryptClient(c);
   if (isProd) {
     try {
       await pool.query(
         'INSERT INTO clients (id, company, name, phone, factor, type, email, address, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-        [c.id, c.company, c.name, c.phone, c.factor, c.type, c.email, c.address, c.notes]
+        [ec.id, ec.company, ec.name, ec.phone, ec.factor, ec.type, ec.email, ec.address, ec.notes]
       );
       res.json(c);
     } catch (err) {
@@ -316,7 +486,7 @@ app.post('/api/clients', async (req, res) => {
     }
   } else {
     const db = readLocalDb();
-    db.clients.push(c);
+    db.clients.push(ec);
     writeLocalDb(db);
     res.json(c);
   }
@@ -325,11 +495,12 @@ app.post('/api/clients', async (req, res) => {
 app.put('/api/clients/:id', async (req, res) => {
   const id = req.params.id;
   const c = req.body;
+  const ec = encryptClient(c);
   if (isProd) {
     try {
       await pool.query(
         'UPDATE clients SET company = $1, name = $2, phone = $3, factor = $4, type = $5, email = $6, address = $7, notes = $8, updated_at = CURRENT_TIMESTAMP WHERE id = $9',
-        [c.company, c.name, c.phone, c.factor, c.type, c.email, c.address, c.notes, id]
+        [ec.company, ec.name, ec.phone, ec.factor, ec.type, ec.email, ec.address, ec.notes, id]
       );
       res.json({ success: true });
     } catch (err) {
@@ -339,7 +510,7 @@ app.put('/api/clients/:id', async (req, res) => {
     const db = readLocalDb();
     const idx = db.clients.findIndex(item => item.id === id);
     if (idx === -1) return res.status(404).json({ error: 'Cliente no encontrado' });
-    db.clients[idx] = { ...db.clients[idx], ...c, updatedAt: new Date().toISOString() };
+    db.clients[idx] = { ...ec, updatedAt: new Date().toISOString() };
     writeLocalDb(db);
     res.json({ success: true });
   }
@@ -370,13 +541,21 @@ app.get('/api/pricelists/:clientId', async (req, res) => {
   if (isProd) {
     try {
       const dbRes = await pool.query('SELECT * FROM price_lists WHERE client_id = $1', [clientId]);
-      res.json(dbRes.rows);
+      res.json(dbRes.rows.map(row => decryptPriceListItem({
+        id: row.product_id,
+        type: row.type,
+        model: row.model,
+        serpentin: row.serpentin,
+        serpentin_gabinete: row.serpentin_gabinete,
+        recubrimiento_completo: row.recubrimiento_completo
+      })));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   } else {
     const db = readLocalDb();
-    res.json(db.priceLists[clientId] || []);
+    const list = db.priceLists[clientId] || [];
+    res.json(list.map(decryptPriceListItem));
   }
 });
 
@@ -387,9 +566,10 @@ app.post('/api/pricelists/:clientId', async (req, res) => {
     try {
       await pool.query('DELETE FROM price_lists WHERE client_id = $1', [clientId]);
       for (const p of pList) {
+        const ep = encryptPriceListItem(p);
         await pool.query(
           'INSERT INTO price_lists (client_id, product_id, type, model, serpentin, serpentin_gabinete, recubrimiento_completo) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [clientId, p.id, p.type, p.model, p.serpentin, p.serpentin_gabinete, p.recubrimiento_completo]
+          [clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo]
         );
       }
       res.json({ success: true });
@@ -398,7 +578,7 @@ app.post('/api/pricelists/:clientId', async (req, res) => {
     }
   } else {
     const db = readLocalDb();
-    db.priceLists[clientId] = pList;
+    db.priceLists[clientId] = pList.map(encryptPriceListItem);
     writeLocalDb(db);
     res.json({ success: true });
   }
@@ -409,36 +589,27 @@ app.get('/api/quotations', async (req, res) => {
   if (isProd) {
     try {
       const dbRes = await pool.query('SELECT * FROM quotations ORDER BY date DESC, folio DESC');
-      res.json(dbRes.rows.map(q => ({
-        ...q,
-        clientId: q.client_id,
-        contactName: q.contact_name,
-        contactPhone: q.contact_phone,
-        attentionTo: q.attention_to,
-        signedBy: q.signed_by,
-        exchangeRate: q.exchange_rate,
-        applyIva: q.apply_iva,
-        ivaRate: q.iva_rate
-      })));
+      res.json(dbRes.rows.map(decryptQuotation));
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   } else {
     const db = readLocalDb();
-    res.json(db.quotations);
+    res.json(db.quotations.map(decryptQuotation));
   }
 });
 
 app.post('/api/quotations', async (req, res) => {
   const q = req.body;
+  const eq = encryptQuotation(q);
   if (isProd) {
     try {
       await pool.query(
         'INSERT INTO quotations (id, folio, date, client_id, contact_name, contact_phone, attention_to, signed_by, exchange_rate, apply_iva, iva_rate, iva, subtotal, total, currency, observations, items) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
         [
-          q.id, q.folio, q.date, q.clientId, q.contactName, q.contactPhone,
-          q.attentionTo, q.signedBy, q.exchangeRate, q.applyIva, q.ivaRate,
-          q.iva, q.subtotal, q.total, q.currency, q.observations, JSON.stringify(q.items)
+          eq.id, eq.folio, eq.date, eq.clientId, eq.contactName, eq.contactPhone,
+          eq.attentionTo, eq.signedBy, eq.exchangeRate, eq.applyIva, eq.ivaRate,
+          eq.iva, eq.subtotal, eq.total, eq.currency, eq.observations, JSON.stringify(eq.items)
         ]
       );
       res.json(q);
@@ -447,7 +618,7 @@ app.post('/api/quotations', async (req, res) => {
     }
   } else {
     const db = readLocalDb();
-    db.quotations.push(q);
+    db.quotations.push(eq);
     writeLocalDb(db);
     res.json(q);
   }

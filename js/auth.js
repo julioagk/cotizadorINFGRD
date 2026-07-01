@@ -21,7 +21,7 @@ window.Auth = (() => {
     let result = '';
     const words = [];
     const asciiLength = ascii[lengthProperty];
-    const hash = [];
+    let hash = [];
     const k = [];
     let primeCounter = 0;
 

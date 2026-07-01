@@ -1314,4 +1314,18 @@ tbody tr:last-child td {
   display: block;
 }
 
+/* Shake Animation for Modals on validation error */
+.shake {
+  animation: shakeAnim 0.5s ease;
+}
+
+@keyframes shakeAnim {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+
 

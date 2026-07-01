@@ -2427,10 +2427,29 @@ window.App = (() => {
           Auth.updateUser(editing.username, { name, role });
           Utils.showToast('Usuario actualizado', 'success');
         } else {
-          const pass = overlay.querySelector('#au-pass').value;
-          const pass2 = overlay.querySelector('#au-pass2').value;
-          if (!pass || pass.length < 6) { Utils.showToast('La contraseña debe tener al menos 6 caracteres', 'warning'); return; }
-          if (pass !== pass2) { Utils.showToast('Las contraseñas no coinciden', 'warning'); return; }
+          const passEl = overlay.querySelector('#au-pass');
+          const pass2El = overlay.querySelector('#au-pass2');
+          const pass = passEl.value;
+          const pass2 = pass2El.value;
+
+          passEl.style.borderColor = '';
+          pass2El.style.borderColor = '';
+
+          if (!pass || pass.length < 6) { 
+            Utils.showToast('La contraseña debe tener al menos 6 caracteres', 'warning'); 
+            passEl.style.borderColor = 'var(--error)';
+            return; 
+          }
+          if (pass !== pass2) { 
+            Utils.showToast('Las contraseñas no coinciden', 'error'); 
+            passEl.style.borderColor = 'var(--error)';
+            pass2El.style.borderColor = 'var(--error)';
+            
+            const modal = overlay.querySelector('.modal');
+            modal.classList.add('shake');
+            setTimeout(() => modal.classList.remove('shake'), 500);
+            return; 
+          }
           const result = Auth.createUser({ username, name, password: pass, role });
           if (!result.success) { Utils.showToast(result.error, 'error'); return; }
           Utils.showToast('Usuario creado', 'success');
@@ -2498,10 +2517,29 @@ window.App = (() => {
       });
 
       overlay.querySelector('#cpw-save-btn').onclick = () => {
-        const newPass = overlay.querySelector('#cpw-new').value;
-        const newPass2 = overlay.querySelector('#cpw-new2').value;
-        if (!newPass || newPass.length < 6) { Utils.showToast('La contraseña debe tener al menos 6 caracteres', 'warning'); return; }
-        if (newPass !== newPass2) { Utils.showToast('Las contraseñas no coinciden', 'warning'); return; }
+        const newPassEl = overlay.querySelector('#cpw-new');
+        const newPass2El = overlay.querySelector('#cpw-new2');
+        const newPass = newPassEl.value;
+        const newPass2 = newPass2El.value;
+
+        newPassEl.style.borderColor = '';
+        newPass2El.style.borderColor = '';
+
+        if (!newPass || newPass.length < 6) { 
+          Utils.showToast('La contraseña debe tener al menos 6 caracteres', 'warning'); 
+          newPassEl.style.borderColor = 'var(--error)';
+          return; 
+        }
+        if (newPass !== newPass2) { 
+          Utils.showToast('Las contraseñas no coinciden', 'error'); 
+          newPassEl.style.borderColor = 'var(--error)';
+          newPass2El.style.borderColor = 'var(--error)';
+          
+          const modal = overlay.querySelector('.modal');
+          modal.classList.add('shake');
+          setTimeout(() => modal.classList.remove('shake'), 500);
+          return; 
+        }
         Auth.changePassword(u.username, newPass);
         Utils.showToast('Contraseña actualizada', 'success');
         overlay.remove();
