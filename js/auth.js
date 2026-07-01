@@ -147,19 +147,26 @@ window.Auth = (() => {
     });
   }
 
-  function changePassword(username, newPassword) {
+  async function changePassword(username, newPassword) {
     const users = getUsers();
     const idx = users.findIndex(u => u.username === username);
-    if (idx === -1) return;
-    users[idx].password = hashPassword(newPassword);
-    users[idx].hashed = true;
-    saveUsers(users);
+    if (idx !== -1) {
+      users[idx].password = hashPassword(newPassword);
+      users[idx].hashed = true;
+      saveUsers(users);
+    }
 
-    // Background password change to backend
-    Storage.apiCall(`/api/auth/users/${username}/password`, {
-      method: 'PUT',
-      body: JSON.stringify({ password: newPassword })
-    });
+    const apiBase = Storage.getApiUrl();
+    if (apiBase) {
+      const res = await Storage.apiCall(`/api/auth/users/${username}/password`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: newPassword })
+      });
+      if (!res) {
+        return { success: false, error: 'Error al actualizar contraseña en el servidor remoto' };
+      }
+    }
+    return { success: true };
   }
 
   function isLoggedIn() {

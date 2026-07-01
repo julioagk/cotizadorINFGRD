@@ -2516,7 +2516,7 @@ window.App = (() => {
         toggleBtnEl: overlay.querySelector('#cpw-new2-toggle')
       });
 
-      overlay.querySelector('#cpw-save-btn').onclick = () => {
+      overlay.querySelector('#cpw-save-btn').onclick = async () => {
         const newPassEl = overlay.querySelector('#cpw-new');
         const newPass2El = overlay.querySelector('#cpw-new2');
         const newPass = newPassEl.value;
@@ -2540,9 +2540,25 @@ window.App = (() => {
           setTimeout(() => modal.classList.remove('shake'), 500);
           return; 
         }
-        Auth.changePassword(u.username, newPass);
-        Utils.showToast('Contraseña actualizada', 'success');
-        overlay.remove();
+
+        const saveBtn = overlay.querySelector('#cpw-save-btn');
+        const origText = saveBtn.textContent;
+        saveBtn.textContent = 'Guardando...';
+        saveBtn.disabled = true;
+
+        const result = await Auth.changePassword(u.username, newPass);
+        if (result.success) {
+          Utils.showToast('Contraseña actualizada', 'success');
+          overlay.remove();
+        } else {
+          Utils.showToast(result.error || 'Error al actualizar contraseña', 'error');
+          saveBtn.textContent = origText;
+          saveBtn.disabled = false;
+          
+          const modal = overlay.querySelector('.modal');
+          modal.classList.add('shake');
+          setTimeout(() => modal.classList.remove('shake'), 500);
+        }
       };
     }
 

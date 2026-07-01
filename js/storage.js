@@ -254,11 +254,68 @@ window.Storage = (() => {
     if (!apiBase) return false;
 
     console.log('Syncing data with Railway backend database...');
-    
+
+    try {
+      // A. Push local-only clients and their custom price lists to backend
+      const localClients = getAll(KEYS.clients);
+      const remoteClients = await apiCall('/api/clients');
+      if (remoteClients) {
+        const remoteIds = new Set(remoteClients.map(c => c.id));
+        for (const localC of localClients) {
+          if (!remoteIds.has(localC.id)) {
+            console.log(`Pushing local-only client ${localC.company || localC.name} to database...`);
+            // POST client to backend
+            await apiCall('/api/clients', {
+              method: 'POST',
+              body: JSON.stringify(localC)
+            });
+            // POST client's price list if it has items
+            const localPList = priceLists.get(localC.id);
+            if (localPList && localPList.length > 0) {
+              await apiCall(`/api/pricelists/${localC.id}`, {
+                method: 'POST',
+                body: JSON.stringify(localPList)
+              });
+            }
+          }
+        }
+      }
+
+      // B. Push local-only quotations to backend
+      const localQuotations = getAll(KEYS.quotations);
+      const remoteQuotations = await apiCall('/api/quotations');
+      if (remoteQuotations) {
+        const remoteQIds = new Set(remoteQuotations.map(q => q.id));
+        for (const localQ of localQuotations) {
+          if (!remoteQIds.has(localQ.id)) {
+            console.log(`Pushing local-only quotation ${localQ.folio} to database...`);
+            await apiCall('/api/quotations', {
+              method: 'POST',
+              body: JSON.stringify(localQ)
+            });
+          }
+        }
+      }
+
+      // C. Push local config if remote is empty
+      const localConfig = config.get();
+      const remoteConfig = await apiCall('/api/config');
+      if (remoteConfig && Object.keys(remoteConfig).length === 0 && Object.keys(localConfig).length > 0) {
+        console.log('Pushing local configuration to database...');
+        await apiCall('/api/config', {
+          method: 'POST',
+          body: JSON.stringify(localConfig)
+        });
+      }
+    } catch (pushErr) {
+      console.warn('Failed pushing local data to backend:', pushErr);
+    }
+
+    // D. normal pull to sync and update local cache
     // 1. Sync configuration
-    const remoteConfig = await apiCall('/api/config');
-    if (remoteConfig) {
-      localStorage.setItem(KEYS.config, JSON.stringify(remoteConfig));
+    const finalConfig = await apiCall('/api/config');
+    if (finalConfig && Object.keys(finalConfig).length > 0) {
+      localStorage.setItem(KEYS.config, JSON.stringify(finalConfig));
     }
 
     // 2. Sync folio counter
@@ -267,12 +324,11 @@ window.Storage = (() => {
       localStorage.setItem(KEYS.folioCounter, remoteFolio.current);
     }
 
-    // 3. Sync clients
-    const remoteClients = await apiCall('/api/clients');
-    if (remoteClients) {
-      saveAll(KEYS.clients, remoteClients);
-      // For each client, pull custom price list
-      for (const client of remoteClients) {
+    // 3. Sync clients & custom pricelists
+    const finalClients = await apiCall('/api/clients');
+    if (finalClients) {
+      saveAll(KEYS.clients, finalClients);
+      for (const client of finalClients) {
         const pList = await apiCall(`/api/pricelists/${client.id}`);
         if (pList) {
           localStorage.setItem(priceListKey(client.id), JSON.stringify(pList));
@@ -281,9 +337,9 @@ window.Storage = (() => {
     }
 
     // 4. Sync quotations
-    const remoteQuotations = await apiCall('/api/quotations');
-    if (remoteQuotations) {
-      saveAll(KEYS.quotations, remoteQuotations);
+    const finalQuotations = await apiCall('/api/quotations');
+    if (finalQuotations) {
+      saveAll(KEYS.quotations, finalQuotations);
     }
 
     // 5. Sync system users
