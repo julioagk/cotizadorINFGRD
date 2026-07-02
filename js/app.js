@@ -806,7 +806,12 @@ window.App = (() => {
       main.innerHTML = `
         <div class="fade-in">
           <div class="page-header">
-            <h1><i data-lucide="file-plus" class="icon-inline" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--accent-primary);"></i> Nueva Cotización</h1>
+            <div>
+              <h1>
+                <button class="btn btn-ghost" style="padding: 4px 8px; margin-right: 8px;" onclick="location.hash='quotations'"><i data-lucide="arrow-left" style="width:18px;height:18px;"></i></button>
+                <i data-lucide="file-plus" class="icon-inline" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--accent-primary);"></i> Nueva Cotización
+              </h1>
+            </div>
           </div>
           ${renderStepper(1)}
           <div class="card">
@@ -823,9 +828,14 @@ window.App = (() => {
                 <p>Crear un nuevo cliente con sus datos y precios</p>
               </div>
             </div>
+            <div class="flex justify-between mt-4">
+              <button class="btn btn-secondary" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
+            </div>
           </div>
         </div>
       `;
+
+      if (window.lucide) window.lucide.createIcons();
 
       document.getElementById('sel-existing').onclick = () => {
         state.clientType = 'existing';
@@ -882,7 +892,10 @@ window.App = (() => {
             </div>
             <div class="flex justify-between mt-4">
               <button class="btn btn-secondary" id="nc-back-step1"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
-              <button class="btn btn-primary btn-lg" id="nc-save" disabled>Crear Cliente y Continuar <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              <div class="flex gap-2">
+                <button class="btn btn-ghost" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
+                <button class="btn btn-primary btn-lg" id="nc-save" disabled>Crear Cliente y Continuar <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -958,6 +971,7 @@ window.App = (() => {
             </div>
             <div class="flex justify-between mt-4">
               <button class="btn btn-secondary" id="src-back"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
+              <button class="btn btn-ghost" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
             </div>
           </div>
         </div>
@@ -999,7 +1013,10 @@ window.App = (() => {
             <div id="excel-import-status" class="mt-4" style="display:none"></div>
             <div class="flex justify-between mt-4">
               <button class="btn btn-secondary" id="excel-back"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
-              <button class="btn btn-primary btn-lg" id="excel-continue" style="display:none">Continuar a Cotización <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              <div class="flex gap-2">
+                <button class="btn btn-ghost" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
+                <button class="btn btn-primary btn-lg" id="excel-continue" style="display:none">Continuar a Cotización <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -1106,9 +1123,12 @@ window.App = (() => {
             <div id="items-table-area"></div>
             <div class="flex justify-between mt-4">
               <button class="btn btn-secondary" onclick="state_step1()"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
-              <button class="btn btn-primary btn-lg" id="go-step3" ${state.items.length === 0 ? 'disabled' : ''}>
-                Siguiente: Datos de Cotización <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i>
-              </button>
+              <div class="flex gap-2">
+                <button class="btn btn-ghost" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
+                <button class="btn btn-primary btn-lg" id="go-step3" ${state.items.length === 0 ? 'disabled' : ''}>
+                  Siguiente: Datos de Cotización <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1504,7 +1524,10 @@ window.App = (() => {
 
             <div class="flex justify-between mt-4">
               <button class="btn btn-secondary" id="back-step2"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
-              <button class="btn btn-primary btn-lg" id="go-step4">Vista Previa <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              <div class="flex gap-2">
+                <button class="btn btn-ghost" onclick="location.hash='quotations'"><i data-lucide="x" style="width:14px;height:14px;margin-right:4px;"></i> Cancelar</button>
+                <button class="btn btn-primary btn-lg" id="go-step4">Vista Previa <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -1603,6 +1626,7 @@ window.App = (() => {
           <div class="flex justify-between">
             <button class="btn btn-secondary" id="back-step3"><i data-lucide="arrow-left" style="width:14px;height:14px;margin-right:4px;"></i> Atrás</button>
             <div class="flex gap-3">
+              <button class="btn btn-ghost btn-lg" onclick="location.hash='quotations'"><i data-lucide="x" style="width:16px;height:16px;margin-right:6px;"></i> Cancelar</button>
               <button class="btn btn-secondary btn-lg" id="save-only"><i data-lucide="save" style="width:16px;height:16px;margin-right:6px;"></i> Guardar</button>
               <button class="btn btn-primary btn-lg" id="save-pdf"><i data-lucide="download" style="width:16px;height:16px;margin-right:6px;"></i> Guardar y Descargar PDF</button>
             </div>

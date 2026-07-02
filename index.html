@@ -46,14 +46,32 @@
   <script src="js/libs/lucide.min.js"></script>
 
   <!-- App Modules (order matters) -->
-  <script src="js/utils.js?v=20.0"></script>
-  <script src="js/storage.js?v=20.0"></script>
-  <script src="js/seed-data.js?v=20.0"></script>
-  <script src="js/excel-importer.js?v=20.0"></script>
-  <script src="js/calculator.js?v=20.0"></script>
-  <script src="js/pdf-generator.js?v=20.0"></script>
-  <script src="js/app.js?v=20.0"></script>
-  <script src="js/auth.js?v=20.0"></script>
+  <script src="js/utils.js?v=22.0"></script>
+  <script src="js/storage.js?v=22.0"></script>
+  <script>
+    // Dynamically load seed-data.js only if it's a valid javascript file and not index.html fallback
+    fetch('js/seed-data.js?v=22.0')
+      .then(res => {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && !ct.includes('text/html')) {
+          return res.text();
+        }
+        throw new Error('Seed data not available or fallback to HTML');
+      })
+      .then(code => {
+        const script = document.createElement('script');
+        script.text = code;
+        document.body.appendChild(script);
+      })
+      .catch(() => {
+        console.log('Running in remote production database mode. Local seed data skipped.');
+      });
+  </script>
+  <script src="js/excel-importer.js?v=22.0"></script>
+  <script src="js/calculator.js?v=22.0"></script>
+  <script src="js/pdf-generator.js?v=22.0"></script>
+  <script src="js/app.js?v=22.0"></script>
+  <script src="js/auth.js?v=22.0"></script>
 
   <!-- Boot -->
   <script>
