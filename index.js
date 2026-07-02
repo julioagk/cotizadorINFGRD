@@ -129,7 +129,7 @@ function deduplicatePriceList(pList) {
   const groups = {};
   for (const p of pList) {
     if (!p || !p.model) continue;
-    const modelKey = p.model.trim().toUpperCase();
+    const modelKey = `${(p.type || '').trim().toUpperCase()}||${p.model.trim().toUpperCase()}`;
     if (!groups[modelKey]) {
       groups[modelKey] = p;
     } else {
