@@ -367,7 +367,9 @@ async function seedDatabaseIfEmpty() {
     { key: 'hisense', company: 'HISENSE', name: 'Hisense México', type: 'oem', factor: 3.0 },
     { key: 'coresa', company: 'CORESA', name: 'Coresa', type: 'distribuidor', factor: 4.0 },
     { key: 'provedora', company: 'PROVEEDORA DE CLIMAS', name: 'Proveedora de Climas', type: 'distribuidor', factor: 4.0 },
-    { key: 'bramex', company: 'BRAMEX', name: 'Bramex', type: 'distribuidor_fabrica', factor: 3.7 }
+    { key: 'bramex', company: 'BRAMEX', name: 'Bramex', type: 'distribuidor_fabrica', factor: 3.7 },
+    { key: 'midea', company: 'MIDEA', name: 'Midea', type: 'distribuidor', factor: 3.7 },
+    { key: 'mayre', company: 'MAYRE Mayoreo de Aire S.A. de C.V.', name: 'Mayre', type: 'distribuidor', factor: 1.0 }
   ];
 
   for (const dc of defaultClients) {
