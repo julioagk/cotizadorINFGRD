@@ -114,6 +114,35 @@ function decryptPriceListItem(p) {
   };
 }
 
+function getProductMaxPrice(p) {
+  if (!p) return 0;
+  const offers = p.offers || {};
+  return Math.max(
+    parseFloat(offers.serpentin) || 0,
+    parseFloat(offers.serpentin_gabinete) || 0,
+    parseFloat(offers.recubrimiento_completo) || 0
+  );
+}
+
+function deduplicatePriceList(pList) {
+  if (!Array.isArray(pList)) return [];
+  const groups = {};
+  for (const p of pList) {
+    if (!p || !p.model) continue;
+    const modelKey = p.model.trim().toUpperCase();
+    if (!groups[modelKey]) {
+      groups[modelKey] = p;
+    } else {
+      const currentMax = getProductMaxPrice(groups[modelKey]);
+      const newMax = getProductMaxPrice(p);
+      if (newMax > currentMax) {
+        groups[modelKey] = p;
+      }
+    }
+  }
+  return Object.values(groups);
+}
+
 function encryptQuotation(q) {
   if (!q) return q;
   let encryptedItems = q.items;
@@ -390,14 +419,15 @@ async function seedDatabaseIfEmpty() {
       };
     }).filter(Boolean);
 
-    console.log(`Seeding price list for ${dc.company}: ${mappedProducts.length} products...`);
+    const finalProducts = deduplicatePriceList(mappedProducts);
+    console.log(`Seeding price list for ${dc.company}: ${finalProducts.length} products... (deduplicated from ${mappedProducts.length})`);
 
     if (isProd) {
-      if (mappedProducts.length > 0) {
+      if (finalProducts.length > 0) {
         const values = [];
         const placeholders = [];
         let index = 1;
-        for (const p of mappedProducts) {
+        for (const p of finalProducts) {
           const ep = encryptPriceListItem(p);
           placeholders.push(`($${index}, $${index+1}, $${index+2}, $${index+3}, $${index+4}, $${index+5}, $${index+6})`);
           values.push(clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo);
@@ -408,7 +438,7 @@ async function seedDatabaseIfEmpty() {
       }
     } else {
       const db = readLocalDb();
-      db.priceLists[clientId] = mappedProducts.map(encryptPriceListItem);
+      db.priceLists[clientId] = finalProducts.map(encryptPriceListItem);
       writeLocalDb(db);
     }
   }
@@ -696,14 +726,15 @@ app.get('/api/pricelists/:clientId', async (req, res) => {
 app.post('/api/pricelists/:clientId', async (req, res) => {
   const { clientId } = req.params;
   const pList = req.body; // Array of product objects
+  const finalList = deduplicatePriceList(pList);
   if (isProd) {
     try {
       await pool.query('DELETE FROM price_lists WHERE client_id = $1', [clientId]);
-      if (Array.isArray(pList) && pList.length > 0) {
+      if (finalList.length > 0) {
         const values = [];
         const placeholders = [];
         let index = 1;
-        for (const p of pList) {
+        for (const p of finalList) {
           const ep = encryptPriceListItem(p);
           placeholders.push(`($${index}, $${index+1}, $${index+2}, $${index+3}, $${index+4}, $${index+5}, $${index+6})`);
           values.push(clientId, ep.id, ep.type, ep.model, ep.serpentin, ep.serpentin_gabinete, ep.recubrimiento_completo);
@@ -718,7 +749,7 @@ app.post('/api/pricelists/:clientId', async (req, res) => {
     }
   } else {
     const db = readLocalDb();
-    db.priceLists[clientId] = pList.map(encryptPriceListItem);
+    db.priceLists[clientId] = finalList.map(encryptPriceListItem);
     writeLocalDb(db);
     res.json({ success: true });
   }
