@@ -9,14 +9,19 @@ window.App = (() => {
     renderShell();
     bindNavigation();
 
-    // Auto-compile Lucide icons for dynamically added DOM elements
+    // Auto-compile Lucide icons for dynamically added DOM elements with infinite-loop protection
     if (window.MutationObserver) {
+      let isCompiling = false;
       const observer = new MutationObserver((mutations) => {
+        if (isCompiling) return;
         let shouldUpdate = false;
         for (const m of mutations) {
           if (m.addedNodes.length > 0) {
             for (const node of m.addedNodes) {
               if (node.nodeType === 1) {
+                if (node.tagName === 'SVG' || node.querySelector('svg')) {
+                  continue; // Skip SVG additions to prevent feedback loops
+                }
                 if (node.hasAttribute('data-lucide') || node.querySelector('[data-lucide]')) {
                   shouldUpdate = true;
                   break;
@@ -27,7 +32,9 @@ window.App = (() => {
           if (shouldUpdate) break;
         }
         if (shouldUpdate && window.lucide) {
+          isCompiling = true;
           window.lucide.createIcons();
+          setTimeout(() => { isCompiling = false; }, 0);
         }
       });
       observer.observe(document.body, { childList: true, subtree: true });
