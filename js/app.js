@@ -1279,6 +1279,7 @@ window.App = (() => {
               <h2 style="margin: 0;"><i data-lucide="plus" class="icon-inline" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i> Agregar</h2>
               <div class="tab-pill-group flex gap-1 p-1" style="background: rgba(0,0,0,0.08); padding: 3px; border-radius: 8px;">
                 <button class="btn btn-sm" id="btn-tab-catalog" style="padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; border: none; outline: none; cursor: pointer; transition: all 0.2s;">Catálogo</button>
+                <button class="btn btn-sm" id="btn-tab-viaticos" style="padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; border: none; outline: none; cursor: pointer; transition: all 0.2s;">Viáticos</button>
                 <button class="btn btn-sm" id="btn-tab-custom" style="padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; border: none; outline: none; cursor: pointer; transition: all 0.2s;">Concepto Libre</button>
               </div>
             </div>
@@ -1318,26 +1319,35 @@ window.App = (() => {
               </div>
             </div>
 
+            <!-- VIATICOS FIELDS -->
+            <div id="viaticos-fields" style="display: none; padding: 16px;">
+              <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Precio de Viáticos (USD) *</label>
+                  <input type="number" class="form-input" id="viat-price" placeholder="Ej: 600.00" min="0" step="0.01" style="font-weight:700;font-size:1.1rem">
+                </div>
+              </div>
+              <div class="flex justify-end mt-3">
+                <button class="btn btn-primary btn-lg" id="viat-add" style="min-width: 180px;"><i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Agregar Viáticos</button>
+              </div>
+            </div>
+
             <!-- CUSTOM FIELDS -->
             <div id="custom-fields" style="display: none; padding: 16px;">
-              <div class="flex gap-2 items-center mb-3" style="font-size: 0.85rem;">
-                <span class="text-muted">Preajustes rápidos:</span>
-                <button type="button" class="btn btn-sm btn-ghost" id="preset-viaticos" style="padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid var(--accent-primary); color: var(--accent-primary); cursor: pointer; font-weight: 600;">Cargar Viáticos</button>
-              </div>
               <div class="form-row">
                 <div class="form-group" style="flex: 1.2;">
                   <label class="form-label">Clave / Modelo *</label>
-                  <input type="text" class="form-input" id="cust-model" placeholder="Ej: SERV, VIATICOS-APL-FOR">
+                  <input type="text" class="form-input" id="cust-model" placeholder="Ej: SERV, INST-ESP">
                 </div>
                 <div class="form-group" style="flex: 1.8;">
                   <label class="form-label">Descripción del Concepto *</label>
-                  <input type="text" class="form-input" id="cust-description" placeholder="Ej: viaticos de aplicacion / Servicio adicional">
+                  <input type="text" class="form-input" id="cust-description" placeholder="Ej: Servicio adicional / Instalación especial">
                 </div>
               </div>
               <div class="form-row mt-2">
                 <div class="form-group" style="flex: 2;">
                   <label class="form-label">Precio Unitario (USD) *</label>
-                  <input type="number" class="form-input" id="cust-price" placeholder="Ej: 600.00" min="0" step="0.01" style="font-weight:700;font-size:1.1rem">
+                  <input type="number" class="form-input" id="cust-price" placeholder="Ej: 500.00" min="0" step="0.01" style="font-weight:700;font-size:1.1rem">
                 </div>
                 <div class="form-group" style="flex: 1;">
                   <label class="form-label">Cantidad *</label>
@@ -1358,34 +1368,52 @@ window.App = (() => {
         const filterInput = document.getElementById('sel-model-filter');
 
         const tabCatalog = document.getElementById('btn-tab-catalog');
+        const tabViaticos = document.getElementById('btn-tab-viaticos');
         const tabCustom = document.getElementById('btn-tab-custom');
         const catalogFields = document.getElementById('catalog-fields');
+        const viaticosFields = document.getElementById('viaticos-fields');
         const customFields = document.getElementById('custom-fields');
 
         let activeTab = 'catalog';
 
         function updateTabStyles() {
+          tabCatalog.style.background = 'transparent';
+          tabCatalog.style.color = 'var(--text-secondary)';
+          tabViaticos.style.background = 'transparent';
+          tabViaticos.style.color = 'var(--text-secondary)';
+          tabCustom.style.background = 'transparent';
+          tabCustom.style.color = 'var(--text-secondary)';
+
+          catalogFields.style.display = 'none';
+          viaticosFields.style.display = 'none';
+          customFields.style.display = 'none';
+
           if (activeTab === 'catalog') {
             tabCatalog.style.background = 'var(--accent-primary)';
             tabCatalog.style.color = 'white';
-            tabCustom.style.background = 'transparent';
-            tabCustom.style.color = 'var(--text-secondary)';
             catalogFields.style.display = 'block';
-            customFields.style.display = 'none';
+          } else if (activeTab === 'viaticos') {
+            tabViaticos.style.background = 'var(--accent-primary)';
+            tabViaticos.style.color = 'white';
+            viaticosFields.style.display = 'block';
+            document.getElementById('viat-price').focus();
           } else {
             tabCustom.style.background = 'var(--accent-primary)';
             tabCustom.style.color = 'white';
-            tabCatalog.style.background = 'transparent';
-            tabCatalog.style.color = 'var(--text-secondary)';
-            catalogFields.style.display = 'none';
             customFields.style.display = 'block';
-            if (window.lucide) window.lucide.createIcons();
           }
+          if (window.lucide) window.lucide.createIcons();
         }
 
         tabCatalog.onclick = (e) => {
           e.preventDefault();
           activeTab = 'catalog';
+          updateTabStyles();
+        };
+
+        tabViaticos.onclick = (e) => {
+          e.preventDefault();
+          activeTab = 'viaticos';
           updateTabStyles();
         };
 
@@ -1399,14 +1427,33 @@ window.App = (() => {
         updateTabStyles();
 
         // Preset Viáticos click handler
-        const presetViaticos = document.getElementById('preset-viaticos');
-        presetViaticos.onclick = (e) => {
-          e.preventDefault();
-          document.getElementById('cust-model').value = 'VIATICOS-APL-FOR';
-          document.getElementById('cust-description').value = 'viaticos de aplicacion';
-          document.getElementById('cust-qty').value = 1;
-          document.getElementById('cust-price').value = '';
-          document.getElementById('cust-price').focus();
+        const viatAddBtn = document.getElementById('viat-add');
+        viatAddBtn.onclick = () => {
+          const vPrice = parseFloat(document.getElementById('viat-price').value) || 0;
+
+          if (vPrice <= 0) {
+            Utils.showToast('Por favor ingresa un precio mayor a 0', 'warning');
+            return;
+          }
+
+          const item = {
+            id: Utils.uuid(),
+            quantity: 1,
+            model: 'VIATICOS-APL-FOR',
+            description: 'viaticos de aplicacion',
+            offer: 'CONCEPTO LIBRE',
+            unitPrice: vPrice,
+            amount: Math.round(vPrice * 100) / 100,
+            clave: 'VIATICOS-APL-FOR'
+          };
+
+          state.items.push(item);
+          renderItemsTable();
+          document.getElementById('go-step3').disabled = false;
+          Utils.showToast('Viáticos agregados', 'success');
+
+          // Reset field
+          document.getElementById('viat-price').value = '';
         };
 
         let selectedProduct = null;
