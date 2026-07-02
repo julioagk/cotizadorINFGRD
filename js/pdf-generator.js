@@ -120,30 +120,30 @@ window.PDFGenerator = (() => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...cyan);
-    doc.text(safeClient.company || '', margin + 2, y + 12);
+    doc.text(safeClient.company || '', margin + 2, y + 10);
 
     // Contact lines
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...darkText);
 
-    let cY = y + 20;
+    let cY = y + 14;
     if (quotation.contactName) {
       doc.text(`Contacto :  ${quotation.contactName}`, margin + 2, cY);
-      cY += 6;
+      cY += 4;
     }
     const tel = quotation.contactPhone || safeClient.phone;
     if (tel) {
       doc.text(`Tels : ${tel}`, margin + 2, cY);
-      cY += 6;
+      cY += 4;
     }
     if (quotation.contactName) {
       doc.text(`AT'N.     ${quotation.contactName}`, margin + 2, cY);
-      cY += 6;
+      cY += 4;
     }
 
     // Push y past the taller of the two columns
-    const leftColBottom = cY + 4;
+    const leftColBottom = cY + 1;
     const rightColBottom = metaY + 7;
     y = Math.max(leftColBottom, rightColBottom);
 
@@ -151,8 +151,8 @@ window.PDFGenerator = (() => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...darkText);
-    doc.text('A continuación pongo a su consideración la siguiente cotización:', margin + 2, y + 2);
-    y += 10;
+    doc.text('A continuación pongo a su consideración la siguiente cotización:', margin + 2, y + 1);
+    y += 5;
 
     // ═══════════════════════════════════════════════
     // "OTROS DATOS" section

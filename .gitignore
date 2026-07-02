@@ -5,6 +5,7 @@
 # Exclude generated PDFs and screenshots
 *.pdf
 *.png
+!assets/logo.png
 
 # Exclude confidential data files and python parsers
 seed_data.json
