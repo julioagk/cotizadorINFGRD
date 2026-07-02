@@ -8,6 +8,31 @@ window.App = (() => {
   function init() {
     renderShell();
     bindNavigation();
+
+    // Auto-compile Lucide icons for dynamically added DOM elements
+    if (window.MutationObserver) {
+      const observer = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        for (const m of mutations) {
+          if (m.addedNodes.length > 0) {
+            for (const node of m.addedNodes) {
+              if (node.nodeType === 1) {
+                if (node.hasAttribute('data-lucide') || node.querySelector('[data-lucide]')) {
+                  shouldUpdate = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (shouldUpdate) break;
+        }
+        if (shouldUpdate && window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
     handleRoute();
     window.addEventListener('hashchange', handleRoute);
   }
