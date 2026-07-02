@@ -1320,6 +1320,10 @@ window.App = (() => {
 
             <!-- CUSTOM FIELDS -->
             <div id="custom-fields" style="display: none; padding: 16px;">
+              <div class="flex gap-2 items-center mb-3" style="font-size: 0.85rem;">
+                <span class="text-muted">Preajustes rápidos:</span>
+                <button type="button" class="btn btn-sm btn-ghost" id="preset-viaticos" style="padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid var(--accent-primary); color: var(--accent-primary); cursor: pointer; font-weight: 600;">Cargar Viáticos</button>
+              </div>
               <div class="form-row">
                 <div class="form-group" style="flex: 1.2;">
                   <label class="form-label">Clave / Modelo *</label>
@@ -1393,6 +1397,17 @@ window.App = (() => {
 
         // Initialize active tab style
         updateTabStyles();
+
+        // Preset Viáticos click handler
+        const presetViaticos = document.getElementById('preset-viaticos');
+        presetViaticos.onclick = (e) => {
+          e.preventDefault();
+          document.getElementById('cust-model').value = 'VIATICOS-APL-FOR';
+          document.getElementById('cust-description').value = 'viaticos de aplicacion';
+          document.getElementById('cust-qty').value = 1;
+          document.getElementById('cust-price').value = '';
+          document.getElementById('cust-price').focus();
+        };
 
         let selectedProduct = null;
 
