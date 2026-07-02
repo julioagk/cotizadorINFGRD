@@ -1275,37 +1275,74 @@ window.App = (() => {
 
         area.innerHTML = `
           <div class="card mb-4">
-            <div class="card-header"><h2><i data-lucide="plus" class="icon-inline" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i> Agregar Producto</h2></div>
-            <div class="form-row">
-              <div class="form-group" style="flex: 1.2;">
-                <label class="form-label">Buscar Modelo o Tipo</label>
-                <input type="text" class="form-input" id="sel-model-filter" placeholder="Escribe el modelo o tipo (ej: AVC, VRF, Condensador)...">
-              </div>
-              <div class="form-group" style="flex: 1.8;">
-                <label class="form-label">Modelo</label>
-                <select class="form-select" id="sel-model">
-                  <option value="">-- Seleccionar --</option>
-                </select>
+            <div class="card-header flex justify-between items-center" style="flex-wrap: wrap; gap: 10px; padding: 12px 16px;">
+              <h2 style="margin: 0;"><i data-lucide="plus" class="icon-inline" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; color: var(--accent-primary);"></i> Agregar</h2>
+              <div class="tab-pill-group flex gap-1 p-1" style="background: rgba(0,0,0,0.08); padding: 3px; border-radius: 8px;">
+                <button class="btn btn-sm" id="btn-tab-catalog" style="padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; border: none; outline: none; cursor: pointer; transition: all 0.2s;">Catálogo</button>
+                <button class="btn btn-sm" id="btn-tab-custom" style="padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; border: none; outline: none; cursor: pointer; transition: all 0.2s;">Concepto Libre</button>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group" style="flex: 2;">
-                <label class="form-label">Oferta</label>
-                <select class="form-select" id="sel-offer" disabled>
-                  <option value="">-- Primero selecciona modelo --</option>
-                </select>
+            
+            <!-- CATALOG FIELDS -->
+            <div id="catalog-fields" style="padding: 16px;">
+              <div class="form-row">
+                <div class="form-group" style="flex: 1.2;">
+                  <label class="form-label">Buscar Modelo o Tipo</label>
+                  <input type="text" class="form-input" id="sel-model-filter" placeholder="Escribe el modelo o tipo (ej: AVC, VRF, Condensador)...">
+                </div>
+                <div class="form-group" style="flex: 1.8;">
+                  <label class="form-label">Modelo</label>
+                  <select class="form-select" id="sel-model">
+                    <option value="">-- Seleccionar --</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Cantidad</label>
-                <input type="number" class="form-input" id="sel-qty" value="1" min="1" step="1">
+              <div class="form-row mt-2">
+                <div class="form-group" style="flex: 2;">
+                  <label class="form-label">Oferta / Recubrimiento</label>
+                  <select class="form-select" id="sel-offer" disabled>
+                    <option value="">-- Primero selecciona modelo --</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cantidad</label>
+                  <input type="number" class="form-input" id="sel-qty" value="1" min="1" step="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Precio Unitario</label>
+                  <input type="text" class="form-input" id="sel-price" readonly style="opacity:0.7;font-weight:700;font-size:1.1rem">
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Precio Unitario</label>
-                <input type="text" class="form-input" id="sel-price" readonly style="opacity:0.7;font-weight:700;font-size:1.1rem">
+              <div class="flex justify-end mt-3">
+                <button class="btn btn-primary btn-lg" id="sel-add" disabled style="min-width: 180px;"><i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Agregar al Catálogo</button>
               </div>
             </div>
-            <div class="flex justify-end mt-2">
-              <button class="btn btn-primary btn-lg" id="sel-add" disabled style="min-width: 180px;"><i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Agregar</button>
+
+            <!-- CUSTOM FIELDS -->
+            <div id="custom-fields" style="display: none; padding: 16px;">
+              <div class="form-row">
+                <div class="form-group" style="flex: 1.2;">
+                  <label class="form-label">Clave / Modelo *</label>
+                  <input type="text" class="form-input" id="cust-model" placeholder="Ej: SERV, VIATICOS-APL-FOR">
+                </div>
+                <div class="form-group" style="flex: 1.8;">
+                  <label class="form-label">Descripción del Concepto *</label>
+                  <input type="text" class="form-input" id="cust-description" placeholder="Ej: viaticos de aplicacion / Servicio adicional">
+                </div>
+              </div>
+              <div class="form-row mt-2">
+                <div class="form-group" style="flex: 2;">
+                  <label class="form-label">Precio Unitario (USD) *</label>
+                  <input type="number" class="form-input" id="cust-price" placeholder="Ej: 600.00" min="0" step="0.01" style="font-weight:700;font-size:1.1rem">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label class="form-label">Cantidad *</label>
+                  <input type="number" class="form-input" id="cust-qty" value="1" min="1" step="1">
+                </div>
+              </div>
+              <div class="flex justify-end mt-3">
+                <button class="btn btn-primary btn-lg" id="cust-add" style="min-width: 180px;"><i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i> Agregar Concepto</button>
+              </div>
             </div>
           </div>
         `;
@@ -1315,6 +1352,47 @@ window.App = (() => {
         const priceInput = document.getElementById('sel-price');
         const addBtn = document.getElementById('sel-add');
         const filterInput = document.getElementById('sel-model-filter');
+
+        const tabCatalog = document.getElementById('btn-tab-catalog');
+        const tabCustom = document.getElementById('btn-tab-custom');
+        const catalogFields = document.getElementById('catalog-fields');
+        const customFields = document.getElementById('custom-fields');
+
+        let activeTab = 'catalog';
+
+        function updateTabStyles() {
+          if (activeTab === 'catalog') {
+            tabCatalog.style.background = 'var(--accent-primary)';
+            tabCatalog.style.color = 'white';
+            tabCustom.style.background = 'transparent';
+            tabCustom.style.color = 'var(--text-secondary)';
+            catalogFields.style.display = 'block';
+            customFields.style.display = 'none';
+          } else {
+            tabCustom.style.background = 'var(--accent-primary)';
+            tabCustom.style.color = 'white';
+            tabCatalog.style.background = 'transparent';
+            tabCatalog.style.color = 'var(--text-secondary)';
+            catalogFields.style.display = 'none';
+            customFields.style.display = 'block';
+            if (window.lucide) window.lucide.createIcons();
+          }
+        }
+
+        tabCatalog.onclick = (e) => {
+          e.preventDefault();
+          activeTab = 'catalog';
+          updateTabStyles();
+        };
+
+        tabCustom.onclick = (e) => {
+          e.preventDefault();
+          activeTab = 'custom';
+          updateTabStyles();
+        };
+
+        // Initialize active tab style
+        updateTabStyles();
 
         let selectedProduct = null;
 
@@ -1428,6 +1506,42 @@ window.App = (() => {
           filterInput.value = '';
           populateModels();
           document.getElementById('sel-qty').value = 1;
+        };
+
+        // CUSTOM CONCEPT ADDITION
+        const custAddBtn = document.getElementById('cust-add');
+        custAddBtn.onclick = () => {
+          const cModel = document.getElementById('cust-model').value.trim();
+          const cDesc = document.getElementById('cust-description').value.trim();
+          const cQty = parseInt(document.getElementById('cust-qty').value) || 1;
+          const cPrice = parseFloat(document.getElementById('cust-price').value) || 0;
+
+          if (!cModel || !cDesc) {
+            Utils.showToast('Completa la clave y la descripción', 'warning');
+            return;
+          }
+
+          const item = {
+            id: Utils.uuid(),
+            quantity: cQty,
+            model: cModel,
+            description: cDesc,
+            offer: 'CONCEPTO LIBRE',
+            unitPrice: cPrice,
+            amount: Math.round(cQty * cPrice * 100) / 100,
+            clave: cModel
+          };
+
+          state.items.push(item);
+          renderItemsTable();
+          document.getElementById('go-step3').disabled = false;
+          Utils.showToast('Concepto libre agregado', 'success');
+
+          // Reset custom fields
+          document.getElementById('cust-model').value = '';
+          document.getElementById('cust-description').value = '';
+          document.getElementById('cust-qty').value = 1;
+          document.getElementById('cust-price').value = '';
         };
       }
 
