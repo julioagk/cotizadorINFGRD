@@ -158,25 +158,23 @@ window.PDFGenerator = (() => {
     // "OTROS DATOS" section
     // ═══════════════════════════════════════════════
     doc.setFillColor(...grayBg);
-    doc.rect(margin, y, pageW - margin * 2, 7, 'F');
+    doc.rect(margin, y, pageW - margin * 2, 6, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(...darkText);
-    doc.text('Otros datos', margin + 2, y + 5);
-    y += 12;
+    doc.text('Otros datos', margin + 2, y + 4.2);
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('En atención a:', margin + 2, y);
+    doc.text('En atención a:', margin + 2, y + 10);
     doc.setFont('helvetica', 'normal');
-    doc.text(quotation.attentionTo || quotation.contactName || '', margin + 45, y);
-    y += 7;
+    doc.text(quotation.attentionTo || quotation.contactName || '', margin + 45, y + 10);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Firmada por:', margin + 2, y);
+    doc.text('Firmada por:', margin + 2, y + 14);
     doc.setFont('helvetica', 'normal');
-    doc.text(quotation.signedBy || config.signedBy || '', margin + 45, y);
-    y += 12;
+    doc.text(quotation.signedBy || config.signedBy || '', margin + 45, y + 14);
+    y += 18;
 
     // ═══════════════════════════════════════════════
     // ITEMS TABLE
