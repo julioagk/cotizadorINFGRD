@@ -108,6 +108,36 @@ window.Calculator = (() => {
           </div>
         </div>
 
+        ${onAdd ? `
+        <div class="mt-3 mb-4 p-3 border rounded" style="background: rgba(0, 180, 216, 0.04); border: 1px solid rgba(0, 180, 216, 0.2); border-radius: 8px; text-align: left;">
+          <h4 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 600; color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="file-text" style="width:15px;height:15px;color: var(--accent-primary);"></i> Detalles del Concepto a Generar
+          </h4>
+          <div class="form-row" style="margin-bottom: 8px;">
+            <div class="form-group" style="flex: 1.2; margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Modelo / Clave *</label>
+              <input type="text" class="form-input" id="calc-add-model" placeholder="Ej: SERP-COND-5TR" style="background: var(--bg-surface); padding: 8px 12px; font-size: 0.9rem;">
+            </div>
+            <div class="form-group" style="flex: 1.8; margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Tipo / Categoría *</label>
+              <input type="text" class="form-input" id="calc-add-type" placeholder="Ej: CONDENSADORA, EVAPORADOR" style="background: var(--bg-surface); padding: 8px 12px; font-size: 0.9rem;">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Descripción del Concepto *</label>
+            <input type="text" class="form-input" id="calc-add-description" placeholder="Descripción en cotización" style="background: var(--bg-surface); padding: 8px 12px; font-size: 0.9rem;">
+          </div>
+          
+          <div class="flex items-center gap-2 mt-3" style="cursor: pointer; user-select: none;">
+            <input type="checkbox" id="calc-add-to-pricelist" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-primary); margin: 0;">
+            <label for="calc-add-to-pricelist" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 0.85rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="save" style="width: 13px; height: 13px; color: var(--accent-primary); display: inline-block; vertical-align: middle;"></i>
+              Guardar este producto en el catálogo de este cliente
+            </label>
+          </div>
+        </div>
+        ` : ''}
+
         <div class="calc-result-box" id="calc-results" style="display:none">
           <div class="calc-result-row">
             <span class="calc-result-label">Galones base</span>
@@ -125,36 +155,6 @@ window.Calculator = (() => {
             <span class="calc-result-label"><i data-lucide="dollar-sign" style="width:16px;height:16px;vertical-align:middle;display:inline-flex;margin-right:2px;"></i> Precio Final</span>
             <span class="calc-result-value" id="res-final-price">-</span>
           </div>
-
-          ${onAdd ? `
-          <div class="mt-3 p-3 border rounded" style="background: rgba(0, 180, 216, 0.04); border: 1px solid rgba(0, 180, 216, 0.2); border-radius: 8px; text-align: left;">
-            <h4 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 600; color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="file-text" style="width:15px;height:15px;color: var(--accent-primary);"></i> Detalles del Concepto a Generar
-            </h4>
-            <div class="form-row" style="margin-bottom: 8px;">
-              <div class="form-group" style="flex: 1.2; margin-bottom: 0;">
-                <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Modelo / Clave *</label>
-                <input type="text" class="form-input" id="calc-add-model" placeholder="Ej: SERP-COND-5TR" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
-              </div>
-              <div class="form-group" style="flex: 1.8; margin-bottom: 0;">
-                <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Tipo / Categoría *</label>
-                <input type="text" class="form-input" id="calc-add-type" placeholder="Ej: CONDENSADORA, EVAPORADOR" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
-              </div>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Descripción del Concepto *</label>
-              <input type="text" class="form-input" id="calc-add-description" placeholder="Descripción en cotización" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
-            </div>
-            
-            <div class="flex items-center gap-2 mt-3" style="cursor: pointer; user-select: none;">
-              <input type="checkbox" id="calc-add-to-pricelist" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-primary); margin: 0;">
-              <label for="calc-add-to-pricelist" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 0.8rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
-                <i data-lucide="save" style="width: 12px; height: 12px; color: var(--accent-primary); display: inline-block; vertical-align: middle;"></i>
-                Guardar este producto en el catálogo de este cliente
-              </label>
-            </div>
-          </div>
-          ` : ''}
         </div>
 
         ${onAdd ? `
