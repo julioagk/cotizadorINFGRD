@@ -94,13 +94,13 @@ window.Storage = (() => {
     return items[idx];
   }
 
-  function remove(key, id, path) {
+  async function remove(key, id, path) {
     const items = getAll(key).filter(item => item.id !== id);
     saveAll(key, items);
 
-    // Background delete from backend
+    // Delete from backend
     if (path) {
-      apiCall(`${path}/${id}`, {
+      await apiCall(`${path}/${id}`, {
         method: 'DELETE'
       });
     }
@@ -112,8 +112,8 @@ window.Storage = (() => {
     getById: (id) => getById(KEYS.clients, id),
     add: (client) => add(KEYS.clients, client, '/api/clients'),
     update: (id, data) => update(KEYS.clients, id, data, '/api/clients'),
-    remove: (id) => {
-      remove(KEYS.clients, id, '/api/clients');
+    remove: async (id) => {
+      await remove(KEYS.clients, id, '/api/clients');
       localStorage.removeItem(priceListKey(id));
     },
     search: (query) => {
@@ -132,33 +132,33 @@ window.Storage = (() => {
         return JSON.parse(localStorage.getItem(priceListKey(clientId))) || [];
       } catch { return []; }
     },
-    save: (clientId, products) => {
+    save: async (clientId, products) => {
       localStorage.setItem(priceListKey(clientId), JSON.stringify(products));
-      // Background push to backend
-      apiCall(`/api/pricelists/${clientId}`, {
+      // Push to backend
+      await apiCall(`/api/pricelists/${clientId}`, {
         method: 'POST',
         body: JSON.stringify(products)
       });
     },
-    add: (clientId, product) => {
+    add: async (clientId, product) => {
       const products = priceLists.get(clientId);
       products.push(product);
-      priceLists.save(clientId, products);
+      await priceLists.save(clientId, products);
       return product;
     },
-    update: (clientId, productId, updates) => {
+    update: async (clientId, productId, updates) => {
       const products = priceLists.get(clientId);
       const idx = products.findIndex(p => p.id === productId);
       if (idx !== -1) {
         products[idx] = { ...products[idx], ...updates };
-        priceLists.save(clientId, products);
+        await priceLists.save(clientId, products);
         return products[idx];
       }
       return null;
     },
-    remove: (clientId, productId) => {
+    remove: async (clientId, productId) => {
       const products = priceLists.get(clientId).filter(p => p.id !== productId);
-      priceLists.save(clientId, products);
+      await priceLists.save(clientId, products);
     },
     getTypes: (clientId) => {
       const products = priceLists.get(clientId);
@@ -182,7 +182,9 @@ window.Storage = (() => {
     getById: (id) => getById(KEYS.quotations, id),
     add: (quotation) => add(KEYS.quotations, quotation, '/api/quotations'),
     update: (id, data) => update(KEYS.quotations, id, data, '/api/quotations'),
-    remove: (id) => remove(KEYS.quotations, id, '/api/quotations'),
+    remove: async (id) => {
+      await remove(KEYS.quotations, id, '/api/quotations');
+    },
     getByClient: (clientId) => getAll(KEYS.quotations).filter(q => q.clientId === clientId)
   };
 

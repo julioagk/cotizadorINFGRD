@@ -2159,20 +2159,22 @@ window.App = (() => {
     renderNewClientStandalone(document.getElementById('main-content'));
   }
 
-  function deleteClient(id) {
-    const ok = window.confirm('¿Estás seguro de eliminar este cliente y todos sus datos?');
+  async function deleteClient(id) {
+    const ok = window.confirm('¿Estás seguro de eliminar este cliente y todos sus datos? (Se eliminarán sus cotizaciones y lista de precios)');
     if (ok) {
-      Storage.clients.remove(id);
-      Utils.showToast('Cliente eliminado', 'success');
+      Utils.showToast('Eliminando...', 'info');
+      await Storage.clients.remove(id);
+      Utils.showToast('Cliente eliminado con éxito', 'success');
       renderClientsList();
     }
   }
 
-  function deleteQuotation(id) {
+  async function deleteQuotation(id) {
     const ok = window.confirm('¿Estás seguro de eliminar esta cotización?');
     if (ok) {
-      Storage.quotations.remove(id);
-      Utils.showToast('Cotización eliminada', 'success');
+      Utils.showToast('Eliminando...', 'info');
+      await Storage.quotations.remove(id);
+      Utils.showToast('Cotización eliminada con éxito', 'success');
       renderQuotationsList();
     }
   }
@@ -2260,10 +2262,11 @@ window.App = (() => {
     setTimeout(() => renderNewQuotation(clientId), 50);
   }
 
-  function removeProduct(clientId, productId) {
-    Storage.priceLists.remove(clientId, productId);
+  async function removeProduct(clientId, productId) {
+    Utils.showToast('Eliminando...', 'info');
+    await Storage.priceLists.remove(clientId, productId);
     renderClientDetail(clientId);
-    Utils.showToast('Producto eliminado', 'success');
+    Utils.showToast('Producto eliminado con éxito', 'success');
   }
 
   function showAddProductModal(clientId) {

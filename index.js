@@ -686,8 +686,10 @@ app.delete('/api/clients/:id', async (req, res) => {
   const id = req.params.id;
   if (isProd) {
     try {
-      await pool.query('DELETE FROM clients WHERE id = $1', [id]);
+      // Delete child records first to satisfy foreign key constraints
       await pool.query('DELETE FROM price_lists WHERE client_id = $1', [id]);
+      await pool.query('DELETE FROM quotations WHERE client_id = $1', [id]);
+      await pool.query('DELETE FROM clients WHERE id = $1', [id]);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -696,6 +698,8 @@ app.delete('/api/clients/:id', async (req, res) => {
     const db = readLocalDb();
     db.clients = db.clients.filter(c => c.id !== id);
     if (db.priceLists[id]) delete db.priceLists[id];
+    // Also clean up local quotations for consistency
+    db.quotations = db.quotations.filter(q => q.clientId !== id);
     writeLocalDb(db);
     res.json({ success: true });
   }
