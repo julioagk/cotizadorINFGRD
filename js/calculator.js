@@ -125,6 +125,36 @@ window.Calculator = (() => {
             <span class="calc-result-label"><i data-lucide="dollar-sign" style="width:16px;height:16px;vertical-align:middle;display:inline-flex;margin-right:2px;"></i> Precio Final</span>
             <span class="calc-result-value" id="res-final-price">-</span>
           </div>
+
+          ${onAdd ? `
+          <div class="mt-3 p-3 border rounded" style="background: rgba(0, 180, 216, 0.04); border: 1px solid rgba(0, 180, 216, 0.2); border-radius: 8px; text-align: left;">
+            <h4 style="margin: 0 0 12px 0; font-size: 0.9rem; font-weight: 600; color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="file-text" style="width:15px;height:15px;color: var(--accent-primary);"></i> Detalles del Concepto a Generar
+            </h4>
+            <div class="form-row" style="margin-bottom: 8px;">
+              <div class="form-group" style="flex: 1.2; margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Modelo / Clave *</label>
+                <input type="text" class="form-input" id="calc-add-model" placeholder="Ej: SERP-COND-5TR" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="flex: 1.8; margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Tipo / Categoría *</label>
+                <input type="text" class="form-input" id="calc-add-type" placeholder="Ej: CONDENSADORA, EVAPORADOR" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.75rem; margin-bottom: 2px;">Descripción del Concepto *</label>
+              <input type="text" class="form-input" id="calc-add-description" placeholder="Descripción en cotización" style="background: var(--bg-surface); padding: 6px 10px; font-size: 0.85rem;">
+            </div>
+            
+            <div class="flex items-center gap-2 mt-3" style="cursor: pointer; user-select: none;">
+              <input type="checkbox" id="calc-add-to-pricelist" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-primary); margin: 0;">
+              <label for="calc-add-to-pricelist" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 0.8rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="save" style="width: 12px; height: 12px; color: var(--accent-primary); display: inline-block; vertical-align: middle;"></i>
+                Guardar este producto en el catálogo de este cliente
+              </label>
+            </div>
+          </div>
+          ` : ''}
         </div>
 
         ${onAdd ? `
@@ -201,7 +231,43 @@ window.Calculator = (() => {
       container.querySelector('#res-material-cost').textContent = '$' + Utils.formatCurrency(result.materialCost) + ' USD';
       container.querySelector('#res-final-price').textContent = '$' + Utils.formatCurrency(result.finalPrice) + ' USD';
 
+      // Prefill details inputs if present
+      const addModelInput = container.querySelector('#calc-add-model');
+      const addTypeInput = container.querySelector('#calc-add-type');
+      const addDescInput = container.querySelector('#calc-add-description');
+
+      if (addModelInput) {
+        const oldValue = addModelInput.dataset.auto || '';
+        if (!addModelInput.value || addModelInput.value === oldValue) {
+          const coilCode = result.coilType === 'condensador' ? 'COND' : 'EVAP';
+          const newVal = `SERP-${coilCode}-${area}M2`.toUpperCase();
+          addModelInput.value = newVal;
+          addModelInput.dataset.auto = newVal;
+        }
+      }
+      if (addTypeInput) {
+        const oldValue = addTypeInput.dataset.auto || '';
+        if (!addTypeInput.value || addTypeInput.value === oldValue) {
+          const newVal = result.coilType === 'condensador' ? 'CONDENSADORA' : 'EVAPORADOR';
+          addTypeInput.value = newVal;
+          addTypeInput.dataset.auto = newVal;
+        }
+      }
+      if (addDescInput) {
+        const oldValue = addDescInput.dataset.auto || '';
+        if (!addDescInput.value || addDescInput.value === oldValue) {
+          const coilLabel = result.coilType === 'condensador' ? 'Condensador' : 'Evaporador';
+          const newVal = `APLICACION DE ANTICORROSIVO INFINIGUARD A SERPENTIN ${coilLabel.toUpperCase()} DE ${length}X${height}" (${area} M2)`.toUpperCase();
+          addDescInput.value = newVal;
+          addDescInput.dataset.auto = newVal;
+        }
+      }
+
       resultsBox.style.display = 'block';
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
 
       if (container.querySelector('#calc-add-btn')) {
         container.querySelector('#calc-add-btn').disabled = false;
@@ -212,18 +278,50 @@ window.Calculator = (() => {
     if (onAdd) {
       container.querySelector('#calc-add-btn').addEventListener('click', () => {
         if (lastResult && onAdd) {
+          const customModel = (container.querySelector('#calc-add-model') ? container.querySelector('#calc-add-model').value.trim() : '');
+          const customType = (container.querySelector('#calc-add-type') ? container.querySelector('#calc-add-type').value.trim().toUpperCase() : '');
+          const customDesc = (container.querySelector('#calc-add-description') ? container.querySelector('#calc-add-description').value.trim() : '');
+          const saveToPricelist = (container.querySelector('#calc-add-to-pricelist') ? container.querySelector('#calc-add-to-pricelist').checked : false);
+
+          if (container.querySelector('#calc-add-model') && (!customModel || !customType || !customDesc)) {
+            Utils.showToast('Por favor completa todos los campos del concepto', 'warning');
+            return;
+          }
+
           const coilLabel = lastResult.coilType === 'condensador' ? 'Condensador' : 'Evaporador';
+          const offerLabel = `Serpentín ${coilLabel}`;
+
           onAdd({
-            model: `SERP-${coilLabel.substring(0, 4).toUpperCase()}-${lastResult.area}m²`,
-            description: `Aplicación de recubrimiento anticorrosivo - Serpentín ${coilLabel} - ${lengthInput.value}"x${heightInput.value}" (${lastResult.area} m²) - ×${lastResult.multiplier}`,
-            offer: `Serpentín ${coilLabel}`,
+            model: customModel || `SERP-${coilLabel.substring(0, 4).toUpperCase()}-${lastResult.area}m²`,
+            description: customDesc || `Aplicación de recubrimiento anticorrosivo - Serpentín ${coilLabel} - ${lengthInput.value}"x${heightInput.value}" (${lastResult.area} m²) - ×${lastResult.multiplier}`,
+            offer: offerLabel,
             unitPrice: lastResult.finalPrice,
-            calculationData: lastResult
+            calculationData: lastResult,
+            saveToPricelist: saveToPricelist,
+            productType: customType || (lastResult.coilType === 'condensador' ? 'CONDENSADORA' : 'EVAPORADOR')
           });
+
           Utils.showToast('Producto agregado a la cotización', 'success');
+          
           lengthInput.value = '';
           heightInput.value = '';
           areaDisplay.value = '';
+          if (container.querySelector('#calc-add-model')) {
+            container.querySelector('#calc-add-model').value = '';
+            container.querySelector('#calc-add-model').dataset.auto = '';
+          }
+          if (container.querySelector('#calc-add-type')) {
+            container.querySelector('#calc-add-type').value = '';
+            container.querySelector('#calc-add-type').dataset.auto = '';
+          }
+          if (container.querySelector('#calc-add-description')) {
+            container.querySelector('#calc-add-description').value = '';
+            container.querySelector('#calc-add-description').dataset.auto = '';
+          }
+          if (container.querySelector('#calc-add-to-pricelist')) {
+            container.querySelector('#calc-add-to-pricelist').checked = false;
+          }
+          
           container.querySelector('#calc-results').style.display = 'none';
           container.querySelector('#calc-add-btn').disabled = true;
           lastResult = null;

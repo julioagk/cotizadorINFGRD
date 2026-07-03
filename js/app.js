@@ -1216,6 +1216,21 @@ window.App = (() => {
                 amount: product.unitPrice,
                 clave: product.model
               });
+
+              if (product.saveToPricelist && state.clientId) {
+                const offerKey = 'serpentin';
+                const newProduct = {
+                  id: Utils.uuid(),
+                  type: product.productType || 'SERPENTIN',
+                  model: product.model,
+                  offers: {
+                    [offerKey]: product.unitPrice
+                  }
+                };
+                Storage.priceLists.add(state.clientId, newProduct);
+                Utils.showToast('Guardado en la lista de precios del cliente', 'success');
+              }
+
               renderItemsTable();
               document.getElementById('go-step3').disabled = false;
             }
@@ -1249,6 +1264,21 @@ window.App = (() => {
                 amount: product.unitPrice,
                 clave: product.model
               });
+
+              if (product.saveToPricelist && state.clientId) {
+                const offerKey = 'serpentin';
+                const newProduct = {
+                  id: Utils.uuid(),
+                  type: product.productType || 'SERPENTIN',
+                  model: product.model,
+                  offers: {
+                    [offerKey]: product.unitPrice
+                  }
+                };
+                Storage.priceLists.add(state.clientId, newProduct);
+                Utils.showToast('Guardado en la lista de precios del cliente', 'success');
+              }
+
               renderItemsTable();
               document.getElementById('go-step3').disabled = false;
             }
