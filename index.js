@@ -291,6 +291,13 @@ if (isProd) {
     );
   `).then(async () => {
     console.log('Database tables verified/created successfully.');
+    // Run column migrations
+    try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed BOOLEAN DEFAULT TRUE');
+      console.log('PostgreSQL users hashed column migration completed.');
+    } catch (migErr) {
+      console.log('PostgreSQL users hashed column migration skipped or already applied:', migErr.message);
+    }
     // Run column type conversions in case they are already numeric
     try {
       await pool.query('ALTER TABLE price_lists ALTER COLUMN serpentin TYPE TEXT');
@@ -473,15 +480,17 @@ app.post('/api/auth/login', async (req, res) => {
       if (!user) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
       
       let match = false;
-      if (user.hashed) {
-        match = user.password === passHash;
-      } else {
-        // Migration of plain text
-        if (user.password === password) {
-          await pool.query('UPDATE users SET password = $1, hashed = $2 WHERE username = $3', [passHash, true, uName]);
-          match = true;
+      if (user.password === passHash) {
+        match = true;
+        if (user.hasOwnProperty('hashed') && !user.hashed) {
+          await pool.query('UPDATE users SET hashed = $1 WHERE username = $2', [true, uName]).catch(() => {});
         }
+      } else if (user.password === password) {
+        // Migration of plain text
+        await pool.query('UPDATE users SET password = $1, hashed = $2 WHERE username = $3', [passHash, true, uName]).catch(() => {});
+        match = true;
       }
+
       if (!match) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
 
       res.json({
@@ -499,16 +508,19 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     
     let match = false;
-    if (user.hashed) {
-      match = user.password === passHash;
-    } else {
-      if (user.password === password) {
-        user.password = passHash;
+    if (user.password === passHash) {
+      match = true;
+      if (!user.hashed) {
         user.hashed = true;
         writeLocalDb(db);
-        match = true;
       }
+    } else if (user.password === password) {
+      user.password = passHash;
+      user.hashed = true;
+      writeLocalDb(db);
+      match = true;
     }
+
     if (!match) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
     
     res.json({ username: user.username, name: user.name, role: user.role });

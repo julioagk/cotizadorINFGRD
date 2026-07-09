@@ -216,21 +216,32 @@ window.Auth = (() => {
 
     // Local-only backup mode
     const users = getUsers();
-    const user = users.find(u => {
-      if (u.username.toLowerCase() !== username.toLowerCase()) return false;
-      if (u.hashed) {
-        return u.password === hashPassword(password);
-      }
-      if (u.password === password) {
-        u.password = hashPassword(password);
-        u.hashed = true;
-        saveUsers(users);
-        return true;
-      }
-      return false;
-    });
+    let user = null;
+    let match = false;
 
-    if (!user) return { success: false, error: 'Usuario o contraseña incorrectos' };
+    const passHash = hashPassword(password);
+    for (const u of users) {
+      if (u.username.toLowerCase() === username.toLowerCase()) {
+        if (u.password === passHash) {
+          match = true;
+          if (!u.hashed) {
+            u.hashed = true;
+            saveUsers(users);
+          }
+          user = u;
+          break;
+        } else if (u.password === password) {
+          u.password = passHash;
+          u.hashed = true;
+          saveUsers(users);
+          match = true;
+          user = u;
+          break;
+        }
+      }
+    }
+
+    if (!match || !user) return { success: false, error: 'Usuario o contraseña incorrectos' };
 
     const session = {
       username: user.username,
